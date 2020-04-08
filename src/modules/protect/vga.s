@@ -108,5 +108,38 @@ vram_font_copy: ; vram_font_copy(font,vram,plane,color)
 	ret
 
 	
+vram_bit_copy:
+	push	ebp
+	mov	ebp, esp
 
+	push	edi
+	push	eax
+	push	ebx
+
+	mov	edi, [ebp +12]	; vram address
+	movzx	eax, byte [ebp +16]	; plane
+	movzx	ebx, word [ebp +20]	; color
+
+	test	bl, al
+	setz	bl
+	dec	bl
+
+	mov	al, [ebp + 8]	; bit pattern
+	mov	ah, al
+	not	ah
+	; AL = (bit pattern), AH = ~(bit pattern)
+
+	and	ah, [edi]	; [edi] is now data
+	and	al, bl
+	or	al, ah
+	mov	[edi], al
+
+	pop	ebx
+	pop	eax
+	pop	edi
+
+	mov	esp, ebp
+	pop	ebp
+
+	ret
 
