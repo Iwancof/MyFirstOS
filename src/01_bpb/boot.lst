@@ -1,0 +1,9 @@
+     1                                  entry:
+     2 00000000 EB58                    	jmp	ipl
+     3 00000002 90<rept>                	times 	90 - ($ - $$) db 0x90
+     4                                  
+     5                                  ipl:
+     6 0000005A EBFE                    	jmp	$
+     7                                  
+     8 0000005C 00<rept>                	times	510 - ($ - $$) db 0x00
+     9 000001FE 55AA                    	db	0x55,0xAA

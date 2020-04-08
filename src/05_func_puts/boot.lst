@@ -1,0 +1,102 @@
+     1                                  %include "../include/cdecl.s"
+     1                              <1> %macro	cdecl	1-*.nolist
+     2                              <1> 	%rep	%0 - 1
+     3                              <1> 		push	%{-1:-1}
+     4                              <1> 		%rotate -1
+     5                              <1> 	%endrep
+     6                              <1> 	%rotate -1
+     7                              <1> 		call %1
+     8                              <1> 	%if 1 < %0
+     9                              <1> 		add	sp,(__BITS__ >> 3) * (%0 - 1)
+    10                              <1> 	%endif
+    11                              <1> %endmacro
+     2                                  
+     3                                  BOOT_LOAD	equ	0x7c00
+     4                                  ORG		BOOT_LOAD
+     5                                  
+     6                                  
+     7                                  entry:
+     8 00000000 EB58                    	jmp	ipl
+     9 00000002 90<rept>                	times 	90 - ($ - $$) db 0x90
+    10                                  
+    11                                  ipl:
+    12 0000005A FA                      	cli
+    13                                  
+    14 0000005B B80000                  	mov	ax,0x0000
+    15 0000005E 8ED8                    	mov	ds,ax
+    16 00000060 8EC0                    	mov	es,ax
+    17 00000062 8ED0                    	mov	ss,ax
+    18 00000064 BC007C                  	mov	sp,BOOT_LOAD
+    19                                  
+    20 00000067 FB                      	sti
+    21                                  
+    22 00000068 8816[8400]              	mov	[BOOT.DRIVE], dl
+    23                                  
+    24 0000006C 68[7700]E8290083C4-     	cdecl	puts, .s0
+    24 00000074 02                 
+    25                                  
+    26 00000075 EBFE                    	jmp	$
+    27                                  
+    28 00000077 426F6F74696E672E2E-     .s0	db "Booting...",0x0A,0x0D,0
+    28 00000080 2E0A0D00           
+    29                                  
+    30                                  ALIGN	2,db 0
+    31                                  BOOT:
+    32                                  .DRIVE:
+    33 00000084 0000                    	dw 0
+    34                                  
+    35                                  %include	"../modules/real/putc.s"
+     1                              <1> putc:
+     2 00000086 55                  <1> 	push	bp
+     3 00000087 89E5                <1> 	mov	bp,sp
+     4                              <1> 
+     5 00000089 50                  <1> 	push	ax
+     6 0000008A 53                  <1> 	push	bx
+     7                              <1> 
+     8 0000008B 8A4604              <1> 	mov	al,[bp + 4]
+     9 0000008E B40E                <1> 	mov	ah,0x0E
+    10 00000090 BB0000              <1> 	mov	bx,0x0000
+    11 00000093 CD10                <1> 	int	0x10
+    12                              <1> 
+    13 00000095 5B                  <1> 	pop	bx
+    14 00000096 58                  <1> 	pop	ax
+    15                              <1> 
+    16 00000097 89EC                <1> 	mov	sp,bp
+    17 00000099 5D                  <1> 	pop	bp
+    18                              <1> 
+    19 0000009A C3                  <1> 	ret
+    36                                  %include	"../modules/real/puts.s"
+     1                              <1> puts:
+     2 0000009B 55                  <1> 	push	bp
+     3 0000009C 89E5                <1> 	mov	bp,sp
+     4                              <1> 
+     5 0000009E 50                  <1> 	push	ax
+     6 0000009F 53                  <1> 	push	bx
+     7 000000A0 56                  <1> 	push	si
+     8                              <1> 
+     9 000000A1 8B7604              <1> 	mov	si,[bp + 4] ;si : Dist
+    10                              <1> 	
+    11 000000A4 B40E                <1> 	mov	ah,0x0E
+    12 000000A6 BB0000              <1> 	mov	bx,0x0000
+    13 000000A9 FC                  <1> 	cld
+    14                              <1> .10L:
+    15 000000AA AC                  <1> 	lodsb	;al = *si;si++
+    16                              <1> 
+    17 000000AB 3C00                <1> 	cmp 	al,0
+    18 000000AD 7404                <1> 	je	.10E ; exit
+    19                              <1> 
+    20 000000AF CD10                <1> 	int	0x10
+    21 000000B1 EBF7                <1> 	jmp	.10L ; loop
+    22                              <1> .10E:
+    23                              <1> 
+    24 000000B3 5E                  <1> 	pop 	si
+    25 000000B4 5B                  <1> 	pop	bx
+    26 000000B5 58                  <1> 	pop	ax
+    27                              <1> 
+    28 000000B6 89EC                <1> 	mov	sp,bp
+    29 000000B8 5D                  <1> 	pop	bp
+    30                              <1> 
+    31 000000B9 C3                  <1> 	ret
+    37                                  
+    38 000000BA 00<rept>                	times	510 - ($ - $$) db 0x00
+    39 000001FE 55AA                    	db	0x55,0xAA

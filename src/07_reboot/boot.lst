@@ -1,0 +1,98 @@
+     1                                  %include "../include/cdecl.s"
+     1                              <1> %macro	cdecl	1-*.nolist
+     2                              <1> 	%rep	%0 - 1
+     3                              <1> 		push	%{-1:-1}
+     4                              <1> 		%rotate -1
+     5                              <1> 	%endrep
+     6                              <1> 	%rotate -1
+     7                              <1> 		call %1
+     8                              <1> 	%if 1 < %0
+     9                              <1> 		add	sp,(__BITS__ >> 3) * (%0 - 1)
+    10                              <1> 	%endif
+    11                              <1> %endmacro
+     2                                  
+     3                                  BOOT_LOAD	equ	0x7c00
+     4                                  ORG		BOOT_LOAD
+     5                                  
+     6                                  entry:
+     7 00000000 EB58                    	jmp	ipl
+     8 00000002 90<rept>                	times 	90 - ($ - $$) db 0x90
+     9                                  
+    10                                  ipl:
+    11 0000005A FA                      	cli
+    12                                  
+    13 0000005B B80000                  	mov	ax,0x0000
+    14 0000005E 8ED8                    	mov	ds,ax
+    15 00000060 8EC0                    	mov	es,ax
+    16 00000062 8ED0                    	mov	ss,ax
+    17 00000064 BC007C                  	mov	sp,BOOT_LOAD
+    18                                  
+    19 00000067 FB                      	sti
+    20                                  
+    21 00000068 8816[7200]              	mov	[BOOT.DRIVE], dl
+    22                                  
+    23 0000006C E82400                  	cdecl 	reboot
+    24                                  
+    25 0000006F EBFE                    	jmp	$
+    26                                  
+    27 00000071 00                      ALIGN	2,db 0
+    28                                  BOOT:
+    29                                  .DRIVE:
+    30 00000072 0000                    	dw 0
+    31                                  
+    32                                  %include	"../modules/real/puts.s"
+     1                              <1> puts:
+     2 00000074 55                  <1> 	push	bp
+     3 00000075 89E5                <1> 	mov	bp,sp
+     4                              <1> 
+     5 00000077 50                  <1> 	push	ax
+     6 00000078 53                  <1> 	push	bx
+     7 00000079 56                  <1> 	push	si
+     8                              <1> 
+     9 0000007A 8B7604              <1> 	mov	si,[bp + 4] ;si : Dist
+    10                              <1> 	
+    11 0000007D B40E                <1> 	mov	ah,0x0E
+    12 0000007F BB0000              <1> 	mov	bx,0x0000
+    13 00000082 FC                  <1> 	cld
+    14                              <1> .10L:
+    15 00000083 AC                  <1> 	lodsb	;al = *si;si++
+    16                              <1> 
+    17 00000084 3C00                <1> 	cmp 	al,0
+    18 00000086 7404                <1> 	je	.10E ; exit
+    19                              <1> 
+    20 00000088 CD10                <1> 	int	0x10
+    21 0000008A EBF7                <1> 	jmp	.10L ; loop
+    22                              <1> .10E:
+    23                              <1> 
+    24 0000008C 5E                  <1> 	pop 	si
+    25 0000008D 5B                  <1> 	pop	bx
+    26 0000008E 58                  <1> 	pop	ax
+    27                              <1> 
+    28 0000008F 89EC                <1> 	mov	sp,bp
+    29 00000091 5D                  <1> 	pop	bp
+    30                              <1> 
+    31 00000092 C3                  <1> 	ret
+    33                                  %include	"../modules/real/reboot.s"
+     1                              <1> reboot:
+     2 00000093 68[AF00]E8DBFF83C4- <1> 	cdecl puts,.s0	; depens on puts.s
+     2 0000009B 02                  <1>
+     3                              <1> 
+     4                              <1> .10L:
+     5 0000009C B410                <1> 	mov	ah,0x10
+     6 0000009E CD16                <1> 	int	0x16
+     7                              <1> 
+     8 000000A0 3C20                <1> 	cmp	al,' '
+     9 000000A2 75F8                <1> 	jne	.10L
+    10                              <1> 
+    11 000000A4 68[CD00]E8CAFF83C4- <1> 	cdecl	puts, .s1
+    11 000000AC 02                  <1>
+    12 000000AD CD19                <1> 	int 0x19
+    13                              <1> 
+    14 000000AF 0A0D50555348205350- <1> .s0	db 0x0A,0x0D,"PUSH SPACE KEY TO REBOOT...",0
+    14 000000B8 414345204B45592054- <1>
+    14 000000C1 4F205245424F4F542E- <1>
+    14 000000CA 2E2E00              <1>
+    15 000000CD 0A0D0A0D00          <1> .s1	db 0x0A,0x0D,0x0A,0x0D,0
+    34                                  
+    35 000000D2 00<rept>                	times	510 - ($ - $$) db 0x00
+    36 000001FE 55AA                    	db	0x55,0xAA

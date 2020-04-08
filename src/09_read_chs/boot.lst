@@ -1,0 +1,306 @@
+     1                                  %include "../include/cdecl.s"
+     1                              <1> %macro	cdecl	1-*.nolist
+     2                              <1> 	%rep	%0 - 1
+     3                              <1> 		push	%{-1:-1}
+     4                              <1> 		%rotate -1
+     5                              <1> 	%endrep
+     6                              <1> 	%rotate -1
+     7                              <1> 		call %1
+     8                              <1> 	%if 1 < %0
+     9                              <1> 		add	sp,(__BITS__ >> 3) * (%0 - 1)
+    10                              <1> 	%endif
+    11                              <1> %endmacro
+     2                                  %include "../include/drive.s"
+     1                              <1> struc drive
+     2 00000000 <res 00000002>      <1> 	.no	resw	1	; number of drive
+     3 00000002 <res 00000002>      <1> 	.cyln	resw	1	; cylnder
+     4 00000004 <res 00000002>      <1> 	.head	resw	1	; head
+     5 00000006 <res 00000002>      <1> 	.sect	resw	1	; sector
+     6                              <1> endstruc
+     3                                  %include "../include/define.s"
+     1                              <1> BOOT_LOAD	equ	0x7c00
+     2                              <1> 
+     3                              <1> BOOT_SIZE	equ	(1024 * 8)
+     4                              <1> SECT_SIZE	equ	(512)
+     5                              <1> BOOT_SECT	equ	(BOOT_SIZE / SECT_SIZE)
+     4                                  
+     5                                  BOOT_LOAD	equ	0x7c00
+     6                                  ORG		BOOT_LOAD
+     7                                  
+     8                                  entry:
+     9 00000000 EB58                    	jmp	ipl
+    10 00000002 90<rept>                	times 	90 - ($ - $$) db 0x90
+    11                                  
+    12                                  ipl:
+    13 0000005A FA                      	cli
+    14                                  
+    15 0000005B B80000                  	mov	ax,0x0000
+    16 0000005E 8ED8                    	mov	ds,ax
+    17 00000060 8EC0                    	mov	es,ax
+    18 00000062 8ED0                    	mov	ss,ax
+    19 00000064 BC007C                  	mov	sp,BOOT_LOAD
+    20                                  
+    21 00000067 FB                      	sti
+    22 00000068 8816[B400]              	mov	[BOOT + drive.no], dl
+    23                                  	
+    24 0000006C 68[9900]E84A0083C4-     	cdecl	puts,.s0
+    24 00000074 02                 
+    25 00000075 BB0F00                  	mov	bx, BOOT_SECT - 1 		; -1 indicate this sector
+    26 00000078 B9007E                  	mov	cx, BOOT_LOAD + SECT_SIZE * 1	; load next
+    27 0000007B 515368[B400]E81701-     	cdecl	read_chs, BOOT, bx, cx
+    27 00000083 83C406             
+    28                                  
+    29 00000086 39D8                    	cmp	ax, bx
+    30 00000088 740C                    .10Q:	jz	.10E
+    31 0000008A 68[A500]E82C0083C4-     .10T:	cdecl	puts, .e0	; Error
+    31 00000092 02                 
+    32 00000093 E8C500                  	call	reboot
+    33 00000096 E96701                  .10E:	jmp	stage_2
+    34                                  
+    35 00000099 426F6F74696E672E2E-     .s0	db	"Booting...",0,0x0D,
+    35 000000A2 2E000D             
+    36 000000A5 5B4572726F725D2073-     .e0	db	"[Error] sector",0
+    36 000000AE 6563746F7200       
+    37                                  
+    38                                  ALIGN	2,db 0
+    39                                  BOOT:
+    40                                  	istruc drive
+    41 000000B4 0000                    		at drive.no,	dw	0
+    42 000000B6 0000                    		at drive.cyln,	dw	0
+    43 000000B8 0000                    		at drive.head,	dw	0
+    44 000000BA 0200                    		at drive.sect,	dw	2
+    45                                  	iend
+    46                                  
+    47                                  %include	"../modules/real/puts.s"
+     1                              <1> puts:
+     2 000000BC 55                  <1> 	push	bp
+     3 000000BD 89E5                <1> 	mov	bp,sp
+     4                              <1> 
+     5 000000BF 50                  <1> 	push	ax
+     6 000000C0 53                  <1> 	push	bx
+     7 000000C1 56                  <1> 	push	si
+     8                              <1> 
+     9 000000C2 8B7604              <1> 	mov	si,[bp + 4] ;si : Dist
+    10                              <1> 	
+    11 000000C5 B40E                <1> 	mov	ah,0x0E
+    12 000000C7 BB0000              <1> 	mov	bx,0x0000
+    13 000000CA FC                  <1> 	cld
+    14                              <1> .10L:
+    15 000000CB AC                  <1> 	lodsb	;al = *si;si++
+    16                              <1> 
+    17 000000CC 3C00                <1> 	cmp 	al,0
+    18 000000CE 7404                <1> 	je	.10E ; exit
+    19                              <1> 
+    20 000000D0 CD10                <1> 	int	0x10
+    21 000000D2 EBF7                <1> 	jmp	.10L ; loop
+    22                              <1> .10E:
+    23                              <1> 
+    24 000000D4 5E                  <1> 	pop 	si
+    25 000000D5 5B                  <1> 	pop	bx
+    26 000000D6 58                  <1> 	pop	ax
+    27                              <1> 
+    28 000000D7 89EC                <1> 	mov	sp,bp
+    29 000000D9 5D                  <1> 	pop	bp
+    30                              <1> 
+    31 000000DA C3                  <1> 	ret
+    48                                  %include	"../modules/real/itoa.s"
+     1                              <1> itoa:	;itoa(num,buf,size,radix,flag);
+     2 000000DB 55                  <1> 	push 	bp
+     3 000000DC 89E5                <1> 	mov	bp,sp
+     4                              <1> 
+     5                              <1> 	
+     6 000000DE 50                  <1> 	push	ax
+     7 000000DF 53                  <1> 	push	bx
+     8 000000E0 51                  <1> 	push	cx
+     9 000000E1 52                  <1> 	push	dx
+    10 000000E2 56                  <1> 	push	si
+    11 000000E3 57                  <1> 	push	di
+    12                              <1> 
+    13                              <1> 
+    14                              <1> 	;init
+    15 000000E4 8B5E0C              <1> 	mov	bx, word [bp + 12]	; bx = flag
+    16 000000E7 8B4E08              <1> 	mov	cx,	 [bp + 8]	; cx = size
+    17 000000EA 8B7606              <1> 	mov	si,	 [bp + 6]	; si = dist
+    18                              <1> 
+    19 000000ED 89F7                <1> 	mov	di,si
+    20                              <1> 
+    21                              <1> 	;cmp	cx,0
+    22                              <1> 	;jg	.10A
+    23                              <1> 	;jmp	.40A		; no buffer
+    24                              <1> 
+    25                              <1> .10A:				; start
+    26                              <1> 
+    27 000000EF B020                <1> 	mov	al,' '
+    28 000000F1 F7C30400            <1> 	test	bx, 0b0100
+    29 000000F5 7402                <1> 	je	.42E
+    30 000000F7 B030                <1> 	mov	al,'0'
+    31                              <1> .42E:
+    32                              <1> 
+    33                              <1> 
+    34 000000F9 FC                  <1> 	cld
+    35 000000FA F3AA                <1> 	rep	stosb
+    36                              <1> 
+    37 000000FC 8B4604              <1> 	mov	ax,[bp + 4]	; ax = num	
+    38 000000FF 8B4E08              <1> 	mov	cx,[bp + 8]	; cx = size
+    39 00000102 89F7                <1> 	mov	di,si
+    40 00000104 01CF                <1> 	add	di,cx		; di is tail of buffer
+    41 00000106 4F                  <1> 	dec	di
+    42                              <1> 
+    43 00000107 F7C30100            <1> 	test	bx,0b0001	; tmp flag.is_signed
+    44 0000010B 7408                <1> .10Q:	jz	.10E		; if tmp == unsigned 
+    45 0000010D 83F800              <1>   	cmp	ax,0		; check(ax - 0)
+    46 00000110 7D03                <1> .12Q:	jge	.12E		; if 0 <= ax goto .12E
+    47 00000112 83CB02              <1> 	or	bx,0b0010	; flag |= print_sign
+    48                              <1> .12E:
+    49                              <1> .10E:
+    50                              <1> 	
+    51                              <1> 
+    52 00000115 F7C30200            <1> 	test	bx,0b0010	; if flag.print_size
+    53 00000119 7410                <1> .20Q:	je	.20E		; not print sign
+    54 0000011B 83F800              <1> 	cmp 	ax,0		; check(ax - 0)
+    55 0000011E 7D07                <1> 	jge	.22F		; if 0 <= ax got .22F
+    56 00000120 F7D8                <1> 	neg	ax		; ax *= -1
+    57 00000122 C6042D              <1> 	mov	[si],byte '-'
+    58 00000125 EB03                <1> 	jmp	.22E
+    59 00000127 C6042B              <1> .22F:	mov	[si],byte '+'
+    60 0000012A 49                  <1> .22E:	dec	cx		; finaly
+    61                              <1> .20E:
+    62                              <1> 
+    63 0000012B 8B5E0A              <1> 	mov	bx,[bp + 10]	; bx = radix
+    64                              <1> .30L:
+    65                              <1> 	
+    66 0000012E BA0000              <1> 	mov	dx, 0
+    67 00000131 F7F3                <1> 	div	bx		; DX = AX % radix
+    68                              <1> 				; AX = AX / radix
+    69                              <1> 
+    70 00000133 89D6                <1> 	mov	si,dx
+    71 00000135 8A94[4B01]          <1> 	mov	dl,byte[.ascii + si]	; DL = ASCII[DX]
+    72                              <1> 
+    73 00000139 8815                <1> 	mov	[di],dl		; start writing in tail of buffer
+    74 0000013B 4F                  <1> 	dec	di
+    75                              <1> 
+    76 0000013C 83F800              <1> 	cmp	ax,0
+    77 0000013F E0ED                <1> 	loopnz	.30L
+    78                              <1> 
+    79                              <1> .40A:
+    80                              <1> 
+    81 00000141 5F                  <1> 	pop	di
+    82 00000142 5E                  <1> 	pop	si
+    83 00000143 5A                  <1> 	pop	dx
+    84 00000144 59                  <1> 	pop	cx
+    85 00000145 5B                  <1> 	pop	bx
+    86 00000146 58                  <1> 	pop	ax
+    87                              <1> 
+    88 00000147 89EC                <1> 	mov	sp,bp
+    89 00000149 5D                  <1> 	pop	bp
+    90                              <1> 
+    91 0000014A C3                  <1> 	ret
+    92                              <1> 
+    93 0000014B 303132333435363738- <1> .ascii	db	"0123456789ABCDEF"
+    93 00000154 39414243444546      <1>
+    94                              <1> 
+    95                              <1> 	
+    96                              <1> 	
+    97                              <1> 	
+    49                                  %include	"../modules/real/reboot.s"
+     1                              <1> reboot:
+     2 0000015B 68[7701]E85BFF83C4- <1> 	cdecl puts,.s0	; depens on puts.s
+     2 00000163 02                  <1>
+     3                              <1> 
+     4                              <1> .10L:
+     5 00000164 B410                <1> 	mov	ah,0x10
+     6 00000166 CD16                <1> 	int	0x16
+     7                              <1> 
+     8 00000168 3C20                <1> 	cmp	al,' '
+     9 0000016A 75F8                <1> 	jne	.10L
+    10                              <1> 
+    11 0000016C 68[9501]E84AFF83C4- <1> 	cdecl	puts, .s1
+    11 00000174 02                  <1>
+    12 00000175 CD19                <1> 	int 0x19
+    13                              <1> 
+    14 00000177 0A0D50555348205350- <1> .s0	db 0x0A,0x0D,"PUSH SPACE KEY TO REBOOT...",0
+    14 00000180 414345204B45592054- <1>
+    14 00000189 4F205245424F4F542E- <1>
+    14 00000192 2E2E00              <1>
+    15 00000195 0A0D0A0D00          <1> .s1	db 0x0A,0x0D,0x0A,0x0D,0
+    50                                  %include	"../modules/real/read_chs.s"
+     1                              <1> read_chs: ;read_chs(drive_address,sectors,dst)
+     2                              <1> 	
+     3 0000019A 55                  <1> 	push	bp
+     4 0000019B 89E5                <1> 	mov	bp,sp
+     5                              <1> 
+     6 0000019D 6A03                <1> 	push	3	; number of trying
+     7 0000019F 6A00                <1> 	push	0	; sectors
+     8                              <1> 
+     9 000001A1 53                  <1> 	push	bx
+    10 000001A2 51                  <1> 	push	cx
+    11 000001A3 52                  <1> 	push	dx
+    12 000001A4 06                  <1> 	push	es
+    13 000001A5 56                  <1> 	push	si
+    14                              <1> 
+    15 000001A6 8B7604              <1> 	mov	si,[bp + 4]	; this is address.
+    16                              <1> 
+    17 000001A9 8A6C02              <1> 	mov	ch,[si + drive.cyln + 0]
+    18 000001AC 8A4C03              <1> 	mov	cl,[si + drive.cyln + 1]
+    19 000001AF C0E106              <1> 	shl	cl,6		; xxxxxxxx xx______
+    20 000001B2 0A4C06              <1> 	or	cl,[si + drive.sect]
+    21                              <1> 
+    22 000001B5 8A7404              <1> 	mov	dh,[si + drive.head]
+    23 000001B8 8A14                <1> 	mov	dl,[si + drive.no]
+    24 000001BA B80000              <1> 	mov	ax,0x0000
+    25 000001BD 8EC0                <1> 	mov	es,ax
+    26 000001BF 8B5E08              <1> 	mov	bx,[bp + 8]	; bx = dst
+    27                              <1> .10L:
+    28 000001C2 B402                <1> 	mov	ah,0x02
+    29 000001C4 8A4606              <1> 	mov	al,[bp + 6]	; al = sectors
+    30                              <1> 
+    31 000001C7 CD13                <1> 	int	0x13
+    32 000001C9 7304                <1> 	jnc	.11E		
+    33                              <1> 
+    34 000001CB B000                <1> 	mov	al,0
+    35 000001CD EB0C                <1> 	jmp	.10E
+    36                              <1> .11E:	
+    37 000001CF 3C00                <1> 	cmp	al,0
+    38 000001D1 7508                <1> 	jne	.10E
+    39                              <1> 
+    40 000001D3 B80000              <1> 	mov	ax,0
+    41 000001D6 FF4EFE              <1> 	dec	word [bp - 2]	; dec trying number
+    42 000001D9 75E7                <1> 	jnz	.10L
+    43                              <1> .10E:				; exit
+    44 000001DB B400                <1> 	mov	ah,0
+    45                              <1> 
+    46                              <1> 	;cdecl	itoa, word[bp - 2],.s1,8,10,0b0000
+    47                              <1> 	;cdecl	puts, .s1
+    48                              <1> 
+    49 000001DD 5E                  <1> 	pop si
+    50 000001DE 07                  <1> 	pop es
+    51 000001DF 5A                  <1> 	pop dx
+    52 000001E0 59                  <1> 	pop cx
+    53 000001E1 5B                  <1> 	pop bx
+    54                              <1> 
+    55 000001E2 89EC                <1> 	mov	sp,bp
+    56 000001E4 5D                  <1> 	pop	bp
+    57                              <1> 
+    58 000001E5 C3                  <1> 	ret
+    59                              <1> 
+    60 000001E6 2D2D2D2D2D2D2D2D    <1> .s1	db	"--------"
+    61                              <1> 
+    62                              <1> 
+    51                                  
+    52 000001EE 00<rept>                	times	510 - ($ - $$) db 0x00
+    53 000001FE 55AA                    	db	0x55,0xAA
+    54                                  
+    55                                  
+    56                                  stage_2:
+    57 00000200 68[0B02]E8B6FE83C4-     	cdecl	puts,	.s0
+    57 00000208 02                 
+    58                                  
+    59 00000209 EBFE                    	jmp	$
+    60                                  
+    61 0000020B 326E64207374616765-     .s0	db	"2nd stage...",0x0A,0x0D,0
+    61 00000214 2E2E2E0A0D00       
+    62                                  
+    63 0000021A 00<rept>                	times BOOT_SIZE - ($ - $$)	db	0
+    64                                  
+    65                                  
+    66                                  

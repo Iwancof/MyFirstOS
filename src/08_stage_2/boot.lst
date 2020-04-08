@@ -1,0 +1,131 @@
+     1                                  %include "../include/cdecl.s"
+     1                              <1> %macro	cdecl	1-*.nolist
+     2                              <1> 	%rep	%0 - 1
+     3                              <1> 		push	%{-1:-1}
+     4                              <1> 		%rotate -1
+     5                              <1> 	%endrep
+     6                              <1> 	%rotate -1
+     7                              <1> 		call %1
+     8                              <1> 	%if 1 < %0
+     9                              <1> 		add	sp,(__BITS__ >> 3) * (%0 - 1)
+    10                              <1> 	%endif
+    11                              <1> %endmacro
+     2                                  
+     3                                  BOOT_LOAD	equ	0x7c00
+     4                                  ORG		BOOT_LOAD
+     5                                  
+     6                                  entry:
+     7 00000000 EB58                    	jmp	ipl
+     8 00000002 90<rept>                	times 	90 - ($ - $$) db 0x90
+     9                                  
+    10                                  ipl:
+    11 0000005A FA                      	cli
+    12                                  
+    13 0000005B B80000                  	mov	ax,0x0000
+    14 0000005E 8ED8                    	mov	ds,ax
+    15 00000060 8EC0                    	mov	es,ax
+    16 00000062 8ED0                    	mov	ss,ax
+    17 00000064 BC007C                  	mov	sp,BOOT_LOAD
+    18                                  
+    19 00000067 FB                      	sti
+    20 00000068 8816[B000]              	mov	[BOOT.DRIVE], dl
+    21                                  
+    22 0000006C B402                    	mov	ah,0x02
+    23 0000006E B001                    	mov	al,0x01
+    24 00000070 B90200                  	mov	cx,0b0000000000_000010
+    25 00000073 B600                    	mov	dh,0x00
+    26 00000075 8A16[B000]              	mov	dl,[BOOT.DRIVE]
+    27 00000079 BB007E                  	mov	bx,0x7C00 + 512
+    28 0000007C CD13                    	int	0x13
+    29 0000007E 730C                    .10Q	jnc	.10E
+    30 00000080 68[9100]E82C0083C4-     	cdecl	puts,.e0
+    30 00000088 02                 
+    31 00000089 E84500                  	call	reboot
+    32                                  .10E:
+    33                                  
+    34 0000008C E97101                  	jmp	stage_2
+    35                                  
+    36 0000008F EBFE                    	jmp	$
+    37                                  
+    38 00000091 5B4572726F725D2043-     .e0	db	"[Error] Could not read sector",0
+    38 0000009A 6F756C64206E6F7420-
+    38 000000A3 726561642073656374-
+    38 000000AC 6F7200             
+    39                                  
+    40 000000AF 00                      ALIGN	2,db 0
+    41                                  BOOT:
+    42                                  .DRIVE:
+    43 000000B0 0000                    	dw 0
+    44                                  
+    45                                  %include	"../modules/real/puts.s"
+     1                              <1> puts:
+     2 000000B2 55                  <1> 	push	bp
+     3 000000B3 89E5                <1> 	mov	bp,sp
+     4                              <1> 
+     5 000000B5 50                  <1> 	push	ax
+     6 000000B6 53                  <1> 	push	bx
+     7 000000B7 56                  <1> 	push	si
+     8                              <1> 
+     9 000000B8 8B7604              <1> 	mov	si,[bp + 4] ;si : Dist
+    10                              <1> 	
+    11 000000BB B40E                <1> 	mov	ah,0x0E
+    12 000000BD BB0000              <1> 	mov	bx,0x0000
+    13 000000C0 FC                  <1> 	cld
+    14                              <1> .10L:
+    15 000000C1 AC                  <1> 	lodsb	;al = *si;si++
+    16                              <1> 
+    17 000000C2 3C00                <1> 	cmp 	al,0
+    18 000000C4 7404                <1> 	je	.10E ; exit
+    19                              <1> 
+    20 000000C6 CD10                <1> 	int	0x10
+    21 000000C8 EBF7                <1> 	jmp	.10L ; loop
+    22                              <1> .10E:
+    23                              <1> 
+    24 000000CA 5E                  <1> 	pop 	si
+    25 000000CB 5B                  <1> 	pop	bx
+    26 000000CC 58                  <1> 	pop	ax
+    27                              <1> 
+    28 000000CD 89EC                <1> 	mov	sp,bp
+    29 000000CF 5D                  <1> 	pop	bp
+    30                              <1> 
+    31 000000D0 C3                  <1> 	ret
+    46                                  %include	"../modules/real/reboot.s"
+     1                              <1> reboot:
+     2 000000D1 68[ED00]E8DBFF83C4- <1> 	cdecl puts,.s0	; depens on puts.s
+     2 000000D9 02                  <1>
+     3                              <1> 
+     4                              <1> .10L:
+     5 000000DA B410                <1> 	mov	ah,0x10
+     6 000000DC CD16                <1> 	int	0x16
+     7                              <1> 
+     8 000000DE 3C20                <1> 	cmp	al,' '
+     9 000000E0 75F8                <1> 	jne	.10L
+    10                              <1> 
+    11 000000E2 68[0B01]E8CAFF83C4- <1> 	cdecl	puts, .s1
+    11 000000EA 02                  <1>
+    12 000000EB CD19                <1> 	int 0x19
+    13                              <1> 
+    14 000000ED 0A0D50555348205350- <1> .s0	db 0x0A,0x0D,"PUSH SPACE KEY TO REBOOT...",0
+    14 000000F6 414345204B45592054- <1>
+    14 000000FF 4F205245424F4F542E- <1>
+    14 00000108 2E2E00              <1>
+    15 0000010B 0A0D0A0D00          <1> .s1	db 0x0A,0x0D,0x0A,0x0D,0
+    47                                  
+    48 00000110 00<rept>                	times	510 - ($ - $$) db 0x00
+    49 000001FE 55AA                    	db	0x55,0xAA
+    50                                  
+    51                                  
+    52                                  stage_2:
+    53 00000200 68[0B02]E8ACFE83C4-     	cdecl	puts,	.s0
+    53 00000208 02                 
+    54                                  
+    55 00000209 EBFE                    	jmp	$
+    56                                  
+    57 0000020B 326E64207374616765-     .s0	db	"2nd stage...\0",0x0A,0x0D,0
+    57 00000214 2E2E2E5C300A0D00   
+    58                                  
+    59                                  
+    60                                  
+    61                                  
+    62                                  
+    63                                  

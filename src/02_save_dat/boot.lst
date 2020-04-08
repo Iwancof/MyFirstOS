@@ -1,0 +1,29 @@
+     1                                  BOOT_LOAD	equ	0x7c00
+     2                                  ORG		BOOT_LOAD
+     3                                  
+     4                                  entry:
+     5 00000000 EB58                    	jmp	ipl
+     6 00000002 90<rept>                	times 	90 - ($ - $$) db 0x90
+     7                                  
+     8                                  ipl:
+     9 0000005A FA                      	cli
+    10                                  
+    11 0000005B B80000                  	mov	ax,0x0000
+    12 0000005E 8ED8                    	mov	ds,ax
+    13 00000060 8EC0                    	mov	es,ax
+    14 00000062 8ED0                    	mov	ss,ax
+    15 00000064 BC007C                  	mov	sp,BOOT_LOAD
+    16                                  
+    17 00000067 FB                      	sti
+    18                                  
+    19 00000068 8816[6E00]              	mov	[BOOT.DRIVE], dl
+    20                                  
+    21 0000006C EBFE                    	jmp	$
+    22                                  
+    23                                  ALIGN	2,db 0
+    24                                  BOOT:
+    25                                  .DRIVE:
+    26 0000006E 0000                    	dw 0
+    27                                  
+    28 00000070 00<rept>                	times	510 - ($ - $$) db 0x00
+    29 000001FE 55AA                    	db	0x55,0xAA
