@@ -21,31 +21,23 @@ kernel:
 
         cdecl	draw_str, 25, 14, 0x010F, .s0
 
-	cdecl	draw_pixel,  8,  4 ,0x01
-	cdecl	draw_pixel,  9,  5 ,0x01
-	cdecl	draw_pixel, 10,  6 ,0x02
-	cdecl	draw_pixel, 11,  7 ,0x02
-	cdecl	draw_pixel, 12,  8 ,0x03
-	cdecl	draw_pixel, 13,  9 ,0x03
-	cdecl	draw_pixel, 14, 10 ,0x04
-	cdecl	draw_pixel, 15, 11 ,0x04
+	cdecl	draw_rect, 100, 100, 200, 200, 0x03
+	cdecl	draw_rect, 400, 250, 150, 150, 0x05
+	cdecl	draw_rect, 350, 400, 300, 100, 0x06
 
-	cdecl	draw_pixel, 15,  4 ,0x03
-	cdecl	draw_pixel, 14,  5 ,0x03
-	cdecl	draw_pixel, 13,  6 ,0x04
-	cdecl	draw_pixel, 12,  7 ,0x04
-	cdecl	draw_pixel, 11,  8 ,0x01
-	cdecl	draw_pixel, 10,  9 ,0x01
-	cdecl	draw_pixel,  9, 10 ,0x02
-	cdecl	draw_pixel,  8, 11 ,0x02
+	
+.10L:
+	cdecl	rtc_get_time, RTC_TIME
+	cdecl	draw_time, 72, 0, 0x0700, dword [RTC_TIME]
 
-
-	jmp	$
+	jmp	.10L
 	
 .s0:	db	"welcome to kernel!", 0
+.t0:	db	"----",0
 
 ALIGN	4,	db	0
 FONT_ADR:	dd	0
+RTC_TIME:	dd	0
 
 
 %include	"../modules/protect/vga.s"
@@ -54,6 +46,13 @@ FONT_ADR:	dd	0
 %include	"../modules/protect/draw_str.s"
 %include	"../modules/protect/draw_color_bar.s"
 %include	"../modules/protect/draw_pixel.s"
+%include	"../modules/protect/draw_line.s"
+;%include	"../../../../testOS/src/modules/protect/draw_line.s"
+%include	"../modules/protect/draw_rect.s"
+%include	"../modules/protect/itoa.s"
+%include	"../modules/protect/draw_time.s"
+%include	"../modules/protect/rtc.s"
+;%include	"../../../../testOS/src/modules/protect/draw_rect.s"
 ;%include	"../../../../testOS/src/modules/protect/draw_color_bar.s"
 
 	times	KERNEL_SIZE - ($ - $$)	db	0
