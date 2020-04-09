@@ -13,11 +13,16 @@ KERNEL_SECT		equ	(KERNEL_SIZE / SECT_SIZE)
 
 VECT_BASE		equ	0x0010_0000
 
-%define			RING_ITEN_SIZE	(1 << 4)
-%define			RING_INDEX_MASK	(RING_ITEN_SIZE - 1)
+%define			RING_ITEM_SIZE	(1 << 4)
+%define			RING_INDEX_MASK	(RING_ITEM_SIZE - 1)
 
 struc			ring_buff		; for keyboard
 				.rp	resd	1
 				.wp	resd	1
 				.item	resb	RING_ITEM_SIZE
 endstruc
+;struc ring_buff
+;    .rp resd 1                  ; RP:書き込み位置
+;    .wp resd 1                  ; WP:読み込み位置
+;    .item resb RING_ITEM_SIZE   ; バッファ
+;endstruc
