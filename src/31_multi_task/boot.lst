@@ -46,6 +46,12 @@
     26                              <1> ;    .wp resd 1                  ; WP:読み込み位置
     27                              <1> ;    .item resb RING_ITEM_SIZE   ; バッファ
     28                              <1> ;endstruc
+    29                              <1> 
+    30                              <1> STACK_BASE		equ	0x0010_3000
+    31                              <1> STACK_SIZE		equ	1024
+    32                              <1> 
+    33                              <1> SP_TASK_0		equ	STACK_BASE + (STACK_SIZE * 1)
+    34                              <1> SP_TASK_1		equ	STACK_BASE + (STACK_SIZE * 2)
      4                                  
      5                                  BOOT_LOAD	equ	0x7c00
      6                                  ORG		BOOT_LOAD
@@ -977,82 +983,74 @@
    234                                  
    235                                  
    236                                  stage_6:
-   237 0000098B 68[BC09]E82BF783C4-     	cdecl	puts, .s0
+   237 0000098B 68[A309]E82BF783C4-     	cdecl	puts, .s0
    237 00000993 02                 
-   238 00000994 6A046A106A1068-         	cdecl	itoa, sp, .t0, 16, 16, 0b0100
-   238 0000099B [F109]54E86BF883C4-
-   238 000009A3 0A                 
-   239 000009A4 68[F109]E812F783C4-     	cdecl	puts, .t0
-   239 000009AC 02                 
-   240                                  
-   241                                  .10L:
-   242 000009AD B400                    	mov	ah, 0
-   243 000009AF CD16                    	int	0x16
-   244 000009B1 3C20                    	cmp	al, ' '
-   245 000009B3 75F8                    	jnz	.10L
-   246                                  
-   247 000009B5 B81200                  	mov	ax,0x0012
-   248 000009B8 CD10                    	int	0x10
+   238                                  
+   239                                  .10L:
+   240 00000994 B400                    	mov	ah, 0
+   241 00000996 CD16                    	int	0x16
+   242 00000998 3C20                    	cmp	al, ' '
+   243 0000099A 75F8                    	jnz	.10L
+   244                                  
+   245 0000099C B81200                  	mov	ax,0x0012
+   246 0000099F CD10                    	int	0x10
+   247                                  
+   248 000009A1 EB59                    	jmp	stage_7
    249                                  
-   250 000009BA EB6C                    	jmp	stage_7
-   251                                  
-   252 000009BC 367468207374616765-     .s0:	db	"6th stage...",0x0A,0x0D,0x0A,0x0D
-   252 000009C5 2E2E2E0A0D0A0D     
-   253 000009CC 205075736820535041-     	db	" Push SPACE key to protect mode...",0x0A,0x0D,00
-   253 000009D5 4345206B657920746F-
-   253 000009DE 2070726F7465637420-
-   253 000009E7 6D6F64652E2E2E0A0D-
-   253 000009F0 00                 
-   254 000009F1 2D2D2D2D2D2D2D2D2D-     .t0	db	"----------------",0x0A,0x0D,0
-   254 000009FA 2D2D2D2D2D2D2D0A0D-
-   254 00000A03 00                 
-   255                                  
-   256                                  
-   257                                  ALIGN	4,	db	0
-   258 00000A04 0000000000000000        GDT:	dq	0x00_0000_000000_0000	; NULL
-   259 00000A0C FFFF0000009ACF00        .cs	dq	0x00_CF9A_000000_FFFF	; CODE 4G
-   260 00000A14 FFFF00000092CF00        .ds	dq	0x00_CF92_000000_FFFF	; DATA 4G
-   261                                  .gdt_end:
+   250 000009A3 367468207374616765-     .s0:	db	"6th stage...",0x0A,0x0D,0x0A,0x0D
+   250 000009AC 2E2E2E0A0D0A0D     
+   251 000009B3 205075736820535041-     	db	" Push SPACE key to protect mode...",0x0A,0x0D,00
+   251 000009BC 4345206B657920746F-
+   251 000009C5 2070726F7465637420-
+   251 000009CE 6D6F64652E2E2E0A0D-
+   251 000009D7 00                 
+   252                                  
+   253                                  
+   254                                  ALIGN	4,	db	0
+   255 000009D8 0000000000000000        GDT:	dq	0x00_0000_000000_0000	; NULL
+   256 000009E0 FFFF0000009ACF00        .cs	dq	0x00_CF9A_000000_FFFF	; CODE 4G
+   257 000009E8 FFFF00000092CF00        .ds	dq	0x00_CF92_000000_FFFF	; DATA 4G
+   258                                  .gdt_end:
+   259                                  
+   260                                  SEL_CODE		equ	GDT.cs - GDT
+   261                                  SEL_DATA		equ	GDT.ds - GDT
    262                                  
-   263                                  SEL_CODE		equ	GDT.cs - GDT
-   264                                  SEL_DATA		equ	GDT.ds - GDT
+   263 000009F0 1700                    GDTR:	dw	GDT.gdt_end - GDT - 1	; (Size 1)'s limit is 0
+   264 000009F2 [D8090000]              	dd	GDT
    265                                  
-   266 00000A1C 1700                    GDTR:	dw	GDT.gdt_end - GDT - 1	; (Size 1)'s limit is 0
-   267 00000A1E [040A0000]              	dd	GDT
+   266 000009F6 0000                    IDTR:	dw	0
+   267 000009F8 00000000                	dd	0
    268                                  
-   269 00000A22 0000                    IDTR:	dw	0
-   270 00000A24 00000000                	dd	0
-   271                                  
-   272                                  
-   273                                  stage_7:
-   274 00000A28 FA                      	cli
-   275 00000A29 0F0116[1C0A]            	lgdt	[GDTR]
-   276 00000A2E 0F011E[220A]            	lidt	[IDTR]
-   277                                  
-   278 00000A33 0F20C0                  	mov	eax, cr0
-   279 00000A36 6683C801                	or	eax, 1
-   280 00000A3A 0F22C0                  	mov	cr0, eax
-   281                                  
-   282 00000A3D EB00                    	jmp	$ + 2			; pipe line instruction delete
-   283                                  	
-   284                                  [BITS 32]
-   285 00000A3F 66                      	db	0x66			; override prefix
-   286 00000A40 EA[470A0000]0800        	jmp	SEL_CODE:CODE_32	; SEL_CODE is ""INDEX""
-   287                                  
-   288                                  CODE_32:
-   289 00000A47 66B81000                	mov	ax,  SEL_DATA
-   290 00000A4B 8ED8                    	mov	ds, ax
-   291 00000A4D 8EC0                    	mov	es, ax
-   292 00000A4F 8EE0                    	mov	fs, ax
-   293 00000A51 8EE8                    	mov	gs, ax
-   294 00000A53 8ED0                    	mov	ss, ax
-   295                                  
-   296 00000A55 B900080000              	mov	ecx, (KERNEL_SIZE) / 4	; "/ 4" byte
-   297 00000A5A BE009C0000              	mov	esi, BOOT_END		; from
-   298 00000A5F BF00101000              	mov	edi, KERNEL_LOAD	; to
-   299 00000A64 FC                      	cld
-   300 00000A65 F3A5                    	rep	movsd
-   301                                  
-   302 00000A67 E9(00101000)            	jmp	KERNEL_LOAD
-   303                                  
-   304 00000A6C 00<rept>                	times BOOT_SIZE - ($ - $$)	db	0
+   269                                  
+   270                                  stage_7:
+   271 000009FC FA                      	cli
+   272 000009FD 0F0116[F009]            	lgdt	[GDTR]
+   273 00000A02 0F011E[F609]            	lidt	[IDTR]
+   274                                  
+   275 00000A07 0F20C0                  	mov	eax, cr0
+   276 00000A0A 6683C801                	or	eax, 1
+   277 00000A0E 0F22C0                  	mov	cr0, eax
+   278                                  
+   279 00000A11 EB00                    	jmp	$ + 2			; pipe line instruction delete
+   280                                  	
+   281                                  [BITS 32]
+   282 00000A13 66                      	db	0x66			; override prefix
+   283 00000A14 EA[1B0A0000]0800        	jmp	SEL_CODE:CODE_32	; SEL_CODE is ""INDEX""
+   284                                  
+   285                                  CODE_32:
+   286 00000A1B 66B81000                	mov	ax,  SEL_DATA
+   287 00000A1F 8ED8                    	mov	ds, ax
+   288 00000A21 8EC0                    	mov	es, ax
+   289 00000A23 8EE0                    	mov	fs, ax
+   290 00000A25 8EE8                    	mov	gs, ax
+   291 00000A27 8ED0                    	mov	ss, ax
+   292                                  
+   293 00000A29 B900080000              	mov	ecx, (KERNEL_SIZE) / 4	; "/ 4" byte
+   294 00000A2E BE009C0000              	mov	esi, BOOT_END		; from
+   295 00000A33 BF00101000              	mov	edi, KERNEL_LOAD	; to
+   296 00000A38 FC                      	cld
+   297 00000A39 F3A5                    	rep	movsd
+   298                                  
+   299 00000A3B E9(00101000)            	jmp	KERNEL_LOAD
+   300                                  
+   301 00000A40 00<rept>                	times BOOT_SIZE - ($ - $$)	db	0

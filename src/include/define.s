@@ -26,3 +26,9 @@ endstruc
 ;    .wp resd 1                  ; WP:読み込み位置
 ;    .item resb RING_ITEM_SIZE   ; バッファ
 ;endstruc
+
+STACK_BASE		equ	0x0010_3000
+STACK_SIZE		equ	1024
+
+SP_TASK_0		equ	STACK_BASE + (STACK_SIZE * 1)
+SP_TASK_1		equ	STACK_BASE + (STACK_SIZE * 2)
