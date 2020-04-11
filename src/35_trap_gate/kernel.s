@@ -1,4 +1,5 @@
 %define		USE_SYSTEM_CALL
+%define		USE_TEST_AND_SET
 
 %include	"../include/define.s"
 %include	"../include/cdecl.s"
@@ -111,6 +112,7 @@ RTC_TIME:	dd	0
 %include	"../modules/protect/ring_buff.s"
 %include	"../modules/protect/call_gate.s"
 %include	"../modules/protect/trap_gate.s"
+%include	"../modules/protect/test_and_set.s"
 ;%include	"../modules/protect/int_timer.s"
 %include	"modules/my_int_timer.s"
 %include	"../modules/protect/draw_rotation_bar.s"

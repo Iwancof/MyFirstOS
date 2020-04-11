@@ -1,6 +1,7 @@
      1                                  %define		USE_SYSTEM_CALL
-     2                                  
-     3                                  %include	"../include/define.s"
+     2                                  %define		USE_TEST_AND_SET
+     3                                  
+     4                                  %include	"../include/define.s"
      1                              <1> BOOT_LOAD		equ	0x7c00
      2                              <1> BOOT_END		equ	BOOT_LOAD + BOOT_SIZE
      3                              <1> 
@@ -35,7 +36,7 @@
     32                              <1> 
     33                              <1> SP_TASK_0		equ	STACK_BASE + (STACK_SIZE * 1)
     34                              <1> SP_TASK_1		equ	STACK_BASE + (STACK_SIZE * 2)
-     4                                  %include	"../include/cdecl.s"
+     5                                  %include	"../include/cdecl.s"
      1                              <1> %macro	cdecl	1-*.nolist
      2                              <1> 	%rep	%0 - 1
      3                              <1> 		push	%{-1:-1}
@@ -47,14 +48,14 @@
      9                              <1> 		add	sp,(__BITS__ >> 3) * (%0 - 1)
     10                              <1> 	%endif
     11                              <1> %endmacro
-     5                                  %include	"../include/drive.s"
+     6                                  %include	"../include/drive.s"
      1                              <1> struc drive
      2 00000000 <res 00000002>      <1> 	.no	resw	1	; number of drive
      3 00000002 <res 00000002>      <1> 	.cyln	resw	1	; cylnder
      4 00000004 <res 00000002>      <1> 	.head	resw	1	; head
      5 00000006 <res 00000002>      <1> 	.sect	resw	1	; sector
      6                              <1> endstruc
-     6                                  %include	"../include/set_vect.s"
+     7                                  %include	"../include/set_vect.s"
      1                              <1> %macro	set_vect 1-*.nolist	; vector_number, function_pointer
      2                              <1> 	push	eax
      3                              <1> 	push	edi
@@ -74,12 +75,12 @@
     17                              <1> 	pop	edi
     18                              <1> 	pop	eax
     19                              <1> %endmacro
-     7                                  %include	"../include/outp.s"
+     8                                  %include	"../include/outp.s"
      1                              <1> %macro	outp	2
      2                              <1> 	mov	al, %2
      3                              <1> 	out	%1, al
      4                              <1> %endmacro
-     8                                  %include	"../include/set_desc.s"
+     9                                  %include	"../include/set_desc.s"
      1                              <1> %macro	set_desc	2-*
      2                              <1> 	push	eax
      3                              <1> 	push	edi
@@ -99,7 +100,7 @@
     17                              <1> 	pop	edi
     18                              <1> 	pop	eax
     19                              <1> %endmacro
-     9                                  %include	"../include/set_gate.s"
+    10                                  %include	"../include/set_gate.s"
      1                              <1> %macro	set_gate 2-*
      2                              <1> 	push	eax
      3                              <1> 	push	edi
@@ -114,184 +115,184 @@
     12                              <1> 	pop	edi
     13                              <1> 	pop	eax
     14                              <1> %endmacro
-    10                                  ;%include	"../../../../testOS/src/include/macro.s"
-    11                                  
-    12                                  ORG	KERNEL_LOAD
-    13                                  
-    14                                  ALIGN	4
-    15 00000000 FF07                    IDTR:	dw	8 * 256 - 1	; size
-    16 00000002 00001000                	dd	VECT_BASE
-    17                                  
+    11                                  ;%include	"../../../../testOS/src/include/macro.s"
+    12                                  
+    13                                  ORG	KERNEL_LOAD
+    14                                  
+    15                                  ALIGN	4
+    16 00000000 FF07                    IDTR:	dw	8 * 256 - 1	; size
+    17 00000002 00001000                	dd	VECT_BASE
     18                                  
-    19                                  [BITS 32]
-    20                                  
+    19                                  
+    20                                  [BITS 32]
     21                                  
-    22                                  kernel:
-    23 00000006 FA                      	cli
-    24                                  
-    25 00000007 BE007E0000              	mov	esi, BOOT_LOAD + SECT_SIZE
-    26 0000000C 0FB706                  	movzx	eax, word [esi + 0]
-    27 0000000F 0FB75E02                	movzx	ebx, word [esi + 2]
-    28 00000013 C1E004                  	shl	eax, 4
-    29 00000016 01D8                    	add	eax, ebx		; Emulate real mode addressing
-    30 00000018 A3[EC010000]            	mov	[FONT_ADR], eax
-    31                                  	
-    32                                  	set_desc	GDT.ldt, LDT, word LDT_LIMIT
-    32 0000001D 50                  <1>  push eax
-    32 0000001E 57                  <1>  push edi
-    32                              <1> 
-    32 0000001F BF[940B0000]        <1>  mov edi, %1
-    32 00000024 B8[540B0000]        <1>  mov eax, %2
-    32                              <1> 
-    32                              <1>  %if %0 == 3
-    32 00000029 66C7072700          <1>  mov [edi + 0], %3
-    32                              <1>  %endif
-    32                              <1> 
-    32 0000002E 66894702            <1>  mov [edi + 2], ax
-    32 00000032 C1E810              <1>  shr eax, 16
-    32 00000035 884704              <1>  mov [edi + 4], al
-    32 00000038 886707              <1>  mov [edi + 7], ah
-    32                              <1> 
-    32 0000003B 5F                  <1>  pop edi
-    32 0000003C 58                  <1>  pop eax
-    33                                  	set_desc	GDT.tss_0, TSS_0
-    33 0000003D 50                  <1>  push eax
-    33 0000003E 57                  <1>  push edi
+    22                                  
+    23                                  kernel:
+    24 00000006 FA                      	cli
+    25                                  
+    26 00000007 BE007E0000              	mov	esi, BOOT_LOAD + SECT_SIZE
+    27 0000000C 0FB706                  	movzx	eax, word [esi + 0]
+    28 0000000F 0FB75E02                	movzx	ebx, word [esi + 2]
+    29 00000013 C1E004                  	shl	eax, 4
+    30 00000016 01D8                    	add	eax, ebx		; Emulate real mode addressing
+    31 00000018 A3[EC010000]            	mov	[FONT_ADR], eax
+    32                                  	
+    33                                  	set_desc	GDT.ldt, LDT, word LDT_LIMIT
+    33 0000001D 50                  <1>  push eax
+    33 0000001E 57                  <1>  push edi
     33                              <1> 
-    33 0000003F BF[9C0B0000]        <1>  mov edi, %1
-    33 00000044 B8[BA0B0000]        <1>  mov eax, %2
+    33 0000001F BF[D40B0000]        <1>  mov edi, %1
+    33 00000024 B8[940B0000]        <1>  mov eax, %2
     33                              <1> 
     33                              <1>  %if %0 == 3
-    33                              <1>  mov [edi + 0], %3
+    33 00000029 66C7072700          <1>  mov [edi + 0], %3
     33                              <1>  %endif
     33                              <1> 
-    33 00000049 66894702            <1>  mov [edi + 2], ax
-    33 0000004D C1E810              <1>  shr eax, 16
-    33 00000050 884704              <1>  mov [edi + 4], al
-    33 00000053 886707              <1>  mov [edi + 7], ah
+    33 0000002E 66894702            <1>  mov [edi + 2], ax
+    33 00000032 C1E810              <1>  shr eax, 16
+    33 00000035 884704              <1>  mov [edi + 4], al
+    33 00000038 886707              <1>  mov [edi + 7], ah
     33                              <1> 
-    33 00000056 5F                  <1>  pop edi
-    33 00000057 58                  <1>  pop eax
-    34                                  	set_desc	GDT.tss_1, TSS_1
-    34 00000058 50                  <1>  push eax
-    34 00000059 57                  <1>  push edi
+    33 0000003B 5F                  <1>  pop edi
+    33 0000003C 58                  <1>  pop eax
+    34                                  	set_desc	GDT.tss_0, TSS_0
+    34 0000003D 50                  <1>  push eax
+    34 0000003E 57                  <1>  push edi
     34                              <1> 
-    34 0000005A BF[A40B0000]        <1>  mov edi, %1
-    34 0000005F B8[220C0000]        <1>  mov eax, %2
+    34 0000003F BF[DC0B0000]        <1>  mov edi, %1
+    34 00000044 B8[FA0B0000]        <1>  mov eax, %2
     34                              <1> 
     34                              <1>  %if %0 == 3
     34                              <1>  mov [edi + 0], %3
     34                              <1>  %endif
     34                              <1> 
-    34 00000064 66894702            <1>  mov [edi + 2], ax
-    34 00000068 C1E810              <1>  shr eax, 16
-    34 0000006B 884704              <1>  mov [edi + 4], al
-    34 0000006E 886707              <1>  mov [edi + 7], ah
+    34 00000049 66894702            <1>  mov [edi + 2], ax
+    34 0000004D C1E810              <1>  shr eax, 16
+    34 00000050 884704              <1>  mov [edi + 4], al
+    34 00000053 886707              <1>  mov [edi + 7], ah
     34                              <1> 
-    34 00000071 5F                  <1>  pop edi
-    34 00000072 58                  <1>  pop eax
-    35 00000073 0F0115[B40B0000]        	lgdt		[GDTR]
-    36                                  
-    37 0000007A BC00341000              	mov	esp, SP_TASK_0
-    38 0000007F 66B82000                	mov	ax, SS_TASK_0	; set tss0
-    39 00000083 0F00D8                  	ltr	ax
-    40                                  	; say "this process is task 0" to CPU
-    41                                  
+    34 00000056 5F                  <1>  pop edi
+    34 00000057 58                  <1>  pop eax
+    35                                  	set_desc	GDT.tss_1, TSS_1
+    35 00000058 50                  <1>  push eax
+    35 00000059 57                  <1>  push edi
+    35                              <1> 
+    35 0000005A BF[E40B0000]        <1>  mov edi, %1
+    35 0000005F B8[620C0000]        <1>  mov eax, %2
+    35                              <1> 
+    35                              <1>  %if %0 == 3
+    35                              <1>  mov [edi + 0], %3
+    35                              <1>  %endif
+    35                              <1> 
+    35 00000064 66894702            <1>  mov [edi + 2], ax
+    35 00000068 C1E810              <1>  shr eax, 16
+    35 0000006B 884704              <1>  mov [edi + 4], al
+    35 0000006E 886707              <1>  mov [edi + 7], ah
+    35                              <1> 
+    35 00000071 5F                  <1>  pop edi
+    35 00000072 58                  <1>  pop eax
+    36 00000073 0F0115[F40B0000]        	lgdt		[GDTR]
+    37                                  
+    38 0000007A BC00341000              	mov	esp, SP_TASK_0
+    39 0000007F 66B82000                	mov	ax, SS_TASK_0	; set tss0
+    40 00000083 0F00D8                  	ltr	ax
+    41                                  	; say "this process is task 0" to CPU
     42                                  
-    43 00000086 E88C080000              	cdecl	init_int
-    44 0000008B E825070000              	cdecl	init_pic
-    45                                  
-    46 00000090 5057BF00001000B8-       	set_vect	0x00, int_zero_div
-    46 00000098 [4E090000]668907C1-
-    46 000000A0 E810668947065F58   
-    47 000000A8 5057BF00011000B8-       	set_vect	0x20, int_timer
-    47 000000B0 [C20A0000]668907C1-
-    47 000000B8 E810668947065F58   
-    48 000000C0 5057BF08011000B8-       	set_vect	0x21, int_keyboard
-    48 000000C8 [6C090000]668907C1-
-    48 000000D0 E810668947065F58   
-    49 000000D8 5057BF40011000B8-       	set_vect	0x28, int_rtc
-    49 000000E0 [78070000]668907C1-
-    49 000000E8 E810668947065F58   
-    50 000000F0 5057BF08041000B8-       	set_vect	0x81, trap_gate_81, word 0xEF00	; type = trap
-    50 000000F8 [A70A0000]66C74704-
-    50 00000100 00EF668907C1E81066-
-    50 00000109 8947065F58         
-    51 0000010E 5057BF10041000B8-       	set_vect	0x82, trap_gate_82, word 0xEF00
-    51 00000116 [B50A0000]66C74704-
-    51 0000011E 00EF668907C1E81066-
-    51 00000127 8947065F58         
-    52                                  
-    53                                  	set_gate	GDT.call_gate, call_gate
-    53 0000012C 50                  <1>  push eax
-    53 0000012D 57                  <1>  push edi
-    53                              <1> 
-    53 0000012E BF[AC0B0000]        <1>  mov edi, %1
-    53 00000133 B8[570A0000]        <1>  mov eax, %2
-    53                              <1> 
-    53 00000138 668907              <1>  mov [edi + 0], ax
-    53 0000013B C1E810              <1>  shr eax, 16
-    53 0000013E 66894706            <1>  mov [edi + 6], ax
-    53                              <1> 
-    53 00000142 5F                  <1>  pop edi
-    53 00000143 58                  <1>  pop eax
-    54                                  	
-    55 00000144 6A10E8560600006683-     	cdecl	rtc_int_en, 0x10	; interrupt per udpate
-    55 0000014D C404               
-    56 0000014F E8AC090000              	cdecl	int_en_timer
-    57                                  	
-    58                                  	outp	0x21, 0b1111_1000	; slave
-    58 00000154 B0F8                <1>  mov al, %2
-    58 00000156 E621                <1>  out %1, al
-    59                                  	outp	0xA1, 0b1111_1110	; rtc
-    59 00000158 B0FE                <1>  mov al, %2
-    59 0000015A E6A1                <1>  out %1, al
-    60                                  	
-    61 0000015C FB                      	sti
-    62                                  	
-    63 0000015D 6A0D6A3FE805020000-     	cdecl	draw_font, 63, 13
-    63 00000166 6683C408           
-    64 0000016A 6A046A3FE871020000-     	cdecl	draw_color_bar, 63, 4
-    64 00000173 6683C408           
-    65                                  
-    66 00000177 68[C1010000]680F01-             cdecl	draw_str, 25, 14, 0x010F, .s0
-    66 0000017F 00006A0E6A19E81C02-
-    66 00000188 00006683C410       
-    67                                  
-    68                                  	;jmp	SS_TASK_1:10000
-    69                                  .10L:
-    70                                  
-    71 0000018E E882090000              	cdecl	draw_rotation_bar
-    72                                  
-    73 00000193 68[E8010000]68-         	cdecl	ring_rd, _KEY_BUFF, .int_key
-    73 00000199 [90090000]E8060800-
-    73 000001A1 006683C408         
-    74 000001A6 83F800                  	cmp	eax, 0
-    75 000001A9 74E3                    	je	.10L
-    76                                  
-    77 000001AB 68[90090000]6A1D6A-     	cdecl	draw_key, 2, 29, _KEY_BUFF
-    77 000001B3 02E84B0800006683C4-
-    77 000001BC 0C                 
-    78                                  
+    43                                  
+    44 00000086 E88C080000              	cdecl	init_int
+    45 0000008B E825070000              	cdecl	init_pic
+    46                                  
+    47 00000090 5057BF00001000B8-       	set_vect	0x00, int_zero_div
+    47 00000098 [4E090000]668907C1-
+    47 000000A0 E810668947065F58   
+    48 000000A8 5057BF00011000B8-       	set_vect	0x20, int_timer
+    48 000000B0 [000B0000]668907C1-
+    48 000000B8 E810668947065F58   
+    49 000000C0 5057BF08011000B8-       	set_vect	0x21, int_keyboard
+    49 000000C8 [6C090000]668907C1-
+    49 000000D0 E810668947065F58   
+    50 000000D8 5057BF40011000B8-       	set_vect	0x28, int_rtc
+    50 000000E0 [78070000]668907C1-
+    50 000000E8 E810668947065F58   
+    51 000000F0 5057BF08041000B8-       	set_vect	0x81, trap_gate_81, word 0xEF00	; type = trap
+    51 000000F8 [A70A0000]66C74704-
+    51 00000100 00EF668907C1E81066-
+    51 00000109 8947065F58         
+    52 0000010E 5057BF10041000B8-       	set_vect	0x82, trap_gate_82, word 0xEF00
+    52 00000116 [CD0A0000]66C74704-
+    52 0000011E 00EF668907C1E81066-
+    52 00000127 8947065F58         
+    53                                  
+    54                                  	set_gate	GDT.call_gate, call_gate
+    54 0000012C 50                  <1>  push eax
+    54 0000012D 57                  <1>  push edi
+    54                              <1> 
+    54 0000012E BF[EC0B0000]        <1>  mov edi, %1
+    54 00000133 B8[570A0000]        <1>  mov eax, %2
+    54                              <1> 
+    54 00000138 668907              <1>  mov [edi + 0], ax
+    54 0000013B C1E810              <1>  shr eax, 16
+    54 0000013E 66894706            <1>  mov [edi + 6], ax
+    54                              <1> 
+    54 00000142 5F                  <1>  pop edi
+    54 00000143 58                  <1>  pop eax
+    55                                  	
+    56 00000144 6A10E8560600006683-     	cdecl	rtc_int_en, 0x10	; interrupt per udpate
+    56 0000014D C404               
+    57 0000014F E8EC090000              	cdecl	int_en_timer
+    58                                  	
+    59                                  	outp	0x21, 0b1111_1000	; slave
+    59 00000154 B0F8                <1>  mov al, %2
+    59 00000156 E621                <1>  out %1, al
+    60                                  	outp	0xA1, 0b1111_1110	; rtc
+    60 00000158 B0FE                <1>  mov al, %2
+    60 0000015A E6A1                <1>  out %1, al
+    61                                  	
+    62 0000015C FB                      	sti
+    63                                  	
+    64 0000015D 6A0D6A3FE805020000-     	cdecl	draw_font, 63, 13
+    64 00000166 6683C408           
+    65 0000016A 6A046A3FE871020000-     	cdecl	draw_color_bar, 63, 4
+    65 00000173 6683C408           
+    66                                  
+    67 00000177 68[C1010000]680F01-             cdecl	draw_str, 25, 14, 0x010F, .s0
+    67 0000017F 00006A0E6A19E81C02-
+    67 00000188 00006683C410       
+    68                                  
+    69                                  	;jmp	SS_TASK_1:10000
+    70                                  .10L:
+    71                                  
+    72 0000018E E8C2090000              	cdecl	draw_rotation_bar
+    73                                  
+    74 00000193 68[E8010000]68-         	cdecl	ring_rd, _KEY_BUFF, .int_key
+    74 00000199 [90090000]E8060800-
+    74 000001A1 006683C408         
+    75 000001A6 83F800                  	cmp	eax, 0
+    76 000001A9 74E3                    	je	.10L
+    77                                  
+    78 000001AB 68[90090000]6A1D6A-     	cdecl	draw_key, 2, 29, _KEY_BUFF
+    78 000001B3 02E84B0800006683C4-
+    78 000001BC 0C                 
     79                                  
-    80 000001BD EBCF                    	jmp	.10L
-    81                                  
-    82 000001BF EBFE                    	jmp	$
-    83                                  	
+    80                                  
+    81 000001BD EBCF                    	jmp	.10L
+    82                                  
+    83 000001BF EBFE                    	jmp	$
     84                                  	
-    85 000001C1 2048656C6C6F2C206B-     .s0:	db	" Hello, kernel! ", 0
-    85 000001CA 65726E656C212000   
-    86 000001D2 2D2D2D2D00              .t0:	db	"----",0
-    87 000001D7 2D2D2D2D2D2D2D2D2D-     .t1:	db	"----------------",0
-    87 000001E0 2D2D2D2D2D2D2D00   
-    88 000001E8 00000000                .int_key:	dd	0
-    89                                  
-    90                                  ALIGN	4,	db	0
-    91 000001EC 00000000                FONT_ADR:	dd	0
-    92 000001F0 00000000                RTC_TIME:	dd	0
-    93                                  
+    85                                  	
+    86 000001C1 2048656C6C6F2C206B-     .s0:	db	" Hello, kernel! ", 0
+    86 000001CA 65726E656C212000   
+    87 000001D2 2D2D2D2D00              .t0:	db	"----",0
+    88 000001D7 2D2D2D2D2D2D2D2D2D-     .t1:	db	"----------------",0
+    88 000001E0 2D2D2D2D2D2D2D00   
+    89 000001E8 00000000                .int_key:	dd	0
+    90                                  
+    91                                  ALIGN	4,	db	0
+    92 000001EC 00000000                FONT_ADR:	dd	0
+    93 000001F0 00000000                RTC_TIME:	dd	0
     94                                  
-    95                                  %include	"../modules/protect/vga.s"
+    95                                  
+    96                                  %include	"../modules/protect/vga.s"
      1                              <1> vga_set_read_plane:	; cga_set_read_plane(plane)
      2                              <1> ; this function only selects read plane
      3 000001F4 55                  <1> 	push	ebp
@@ -437,7 +438,7 @@
    143                              <1> 
    144 000002A6 C3                  <1> 	ret
    145                              <1> 
-    96                                  %include	"../modules/protect/draw_char.s"
+    97                                  %include	"../modules/protect/draw_char.s"
      1                              <1> draw_char:
      2                              <1> ; draw_char(row,col,color,ch)
      3 000002A7 55                  <1> 	push	ebp
@@ -502,7 +503,7 @@
     50 0000036A C3                  <1> 	ret
     51                              <1> 
     52                              <1> 	
-    97                                  %include	"../modules/protect/draw_font.s"
+    98                                  %include	"../modules/protect/draw_font.s"
      1                              <1> draw_font:
      2 0000036B 55                  <1> 	push	ebp
      3 0000036C 89E5                <1> 	mov	ebp, esp
@@ -543,7 +544,7 @@
     37                              <1> 
     38                              <1> 
     39                              <1> 
-    98                                  %include	"../modules/protect/draw_str.s"
+    99                                  %include	"../modules/protect/draw_str.s"
      1                              <1> draw_str:	; draw_str(row,col,color,str)
      2 000003A6 55                  <1> 	push	ebp
      3 000003A7 89E5                <1> 	mov	ebp, esp
@@ -592,7 +593,7 @@
     46 000003E2 5D                  <1> 	pop	ebp
     47                              <1> 
     48 000003E3 C3                  <1> 	ret
-    99                                  %include	"../modules/protect/draw_color_bar.s"
+   100                                  %include	"../modules/protect/draw_color_bar.s"
      1                              <1> draw_color_bar:	; draw_color_bar(row,col)
      2 000003E4 55                  <1> 	push	ebp
      3 000003E5 89E5                <1> 	mov	ebp, esp
@@ -657,7 +658,7 @@
     61 00000452 0005000D            <1> 	dw 0x0500,0x0D00
     62 00000456 0006000E            <1> 	dw 0x0600,0x0E00
     63 0000045A 0007000F            <1> 	dw 0x0700,0x0F00
-   100                                  %include	"../modules/protect/draw_pixel.s"
+   101                                  %include	"../modules/protect/draw_pixel.s"
      1                              <1> draw_pixel:	; draw_pixel(X,Y,color)
      2                              <1> ; X,Y is PIXEL data
      3 0000045E 55                  <1> 	push	ebp
@@ -723,7 +724,7 @@
     51                              <1> 
     52 0000051E C3                  <1> 	ret
     53                              <1> 
-   101                                  %include	"../modules/protect/draw_line.s"
+   102                                  %include	"../modules/protect/draw_line.s"
      1                              <1> draw_line:	; draw_line(X0,Y0,X1,Y0,color)
      2 0000051F 55                  <1> 	push	ebp
      3 00000520 89E5                <1> 	mov	ebp, esp
@@ -837,7 +838,7 @@
    110 000005D0 C3                  <1> 	ret
    111                              <1> 
    112                              <1> 
-   102                                  %include	"../modules/protect/draw_rect.s"
+   103                                  %include	"../modules/protect/draw_rect.s"
      1                              <1> draw_rect:	; draw_rect(x0,y0,x1,y1,color)
      2 000005D1 55                  <1> 	push	ebp
      3 000005D2 89E5                <1> 	mov	ebp, esp
@@ -897,7 +898,7 @@
     53                              <1> 
     54 00000636 C3                  <1> 	ret
     55                              <1> 
-   103                                  %include	"../modules/protect/itoa.s"
+   104                                  %include	"../modules/protect/itoa.s"
      1                              <1> itoa:	;itoa(num,buf,size,radix,flag);
      2 00000637 55                  <1> 	push 	ebp
      3 00000638 89E5                <1> 	mov	ebp, esp
@@ -993,7 +994,7 @@
     92                              <1> 	
     93                              <1> 	
     94                              <1> 	
-   104                                  %include	"../modules/protect/draw_time.s"
+   105                                  %include	"../modules/protect/draw_time.s"
      1                              <1> draw_time:	; draw_time(col, row, color, time)
      2 000006C2 55                  <1> 	push	ebp
      3 000006C3 89E5                <1> 	mov	ebp, esp
@@ -1034,7 +1035,7 @@
     30 0000072E 5A5A3A              <1> .hour:	db	"ZZ:"
     31 00000731 5A5A3A              <1> .min:	db	"ZZ:"
     32 00000734 5A5A00              <1> .sec:	db	"ZZ", 0
-   105                                  %include	"../modules/protect/rtc.s"
+   106                                  %include	"../modules/protect/rtc.s"
      1                              <1> rtc_get_time:
      2 00000737 55                  <1> 	push	ebp
      3 00000738 89E5                <1> 	mov	ebp, esp
@@ -1086,7 +1087,7 @@
     49 00000777 C3                  <1> 	ret
     50                              <1> 
     51                              <1> 
-   106                                  %include	"../modules/protect/int_rtc.s"
+   107                                  %include	"../modules/protect/int_rtc.s"
      1                              <1> int_rtc:
      2 00000778 60                  <1> 	pusha		; all registers in stack
      3 00000779 1E                  <1> 	push	ds
@@ -1137,7 +1138,7 @@
     43                              <1> 
     44 000007B4 C3                  <1> 	ret
     45                              <1> 
-   107                                  %include	"../modules/protect/pic.s"
+   108                                  %include	"../modules/protect/pic.s"
      1                              <1> init_pic:	; () -> ()
      2                              <1> ; see p298
      3                              <1> ; ICW -- Initializion command words
@@ -1178,7 +1179,7 @@
     18 000007DE 58                  <1> 	pop	eax
     19                              <1> 
     20 000007DF C3                  <1> 	ret
-   108                                  %include	"../modules/protect/interrupt.s"
+   109                                  %include	"../modules/protect/interrupt.s"
      1                              <1> int_stop:
      2 000007E0 FB                  <1> 	sti
      3                              <1> 
@@ -1296,7 +1297,7 @@
     92                              <1> 
     93 0000095B 203C20205A45524F5F- <1> .s0:	db	" <  ZERO_DIV  > ", 0
     93 00000964 44495620203E2000    <1>
-   109                                  %include	"../modules/protect/int_keyboard.s"
+   110                                  %include	"../modules/protect/int_keyboard.s"
      1                              <1> int_keyboard:
      2 0000096C 60                  <1> 	pusha
      3 0000096D 1E                  <1> 	push	ds
@@ -1330,8 +1331,8 @@
     28                              <1> ; ring_buff_size is struct "ring_buff"'s size created by nasm
     29                              <1> 
     30                              <1> 	
-   110                                  ;%include	"../../../../testOS/src/modules/protect/int_keyboard.s"
-   111                                  %include	"../modules/protect/ring_buff.s"
+   111                                  ;%include	"../../../../testOS/src/modules/protect/int_keyboard.s"
+   112                                  %include	"../modules/protect/ring_buff.s"
      1                              <1> ring_rd:	; ring_rd(ring_address, dest_address)
      2                              <1> 		; return eax
      3 000009A8 55                  <1> 	push	ebp
@@ -1446,7 +1447,7 @@
    108 00000A53 C3                  <1> 	ret
    109                              <1> 
    110 00000A54 2D2D00              <1> .tmp:	db	"--",0
-   112                                  %include	"../modules/protect/call_gate.s"
+   113                                  %include	"../modules/protect/call_gate.s"
      1                              <1> call_gate:
      2                              <1> 	;retf	4 * 4
      3                              <1> ; if SS_GATE_0 called
@@ -1504,122 +1505,162 @@
     54 00000A8E 7461736B5F3100      <1> .t1:	db	"task_1",0
     55 00000A95 2D2D2D2D2D2D2D2D00  <1> .t2:	db	"--------", 0
     56 00000A9E 2D2D2D2D2D2D2D2D00  <1> .t3:	db	"--------", 0
-   113                                  %include	"../modules/protect/trap_gate.s"
+   114                                  %include	"../modules/protect/trap_gate.s"
      1                              <1> ; system calls
      2                              <1> trap_gate_81:	; system call 81, draw_char
-     3 00000AA7 50525153E8F7F7FFFF- <1> 	cdecl	draw_char, ebx, ecx, edx, eax
-     3 00000AB0 6683C410            <1>
-     4 00000AB4 CF                  <1> 	iret
-     5                              <1> 
-     6                              <1> trap_gate_82:
-     7 00000AB5 535251E8A1F9FFFF66- <1> 	cdecl	draw_pixel, ecx, edx, ebx
-     7 00000ABE 83C40C              <1>
-     8 00000AC1 CF                  <1> 	iret
-   114                                  ;%include	"../modules/protect/int_timer.s"
-   115                                  %include	"modules/my_int_timer.s"
+     3                              <1> %ifdef	USE_TEST_AND_SET
+     4 00000AA7 68[DC0A0000]E82F00- <1> 	cdecl	test_and_set, IN_USE
+     4 00000AAF 00006683C404        <1>
+     5                              <1> %endif
+     6 00000AB5 50525153E8E9F7FFFF- <1> 	cdecl	draw_char, ebx, ecx, edx, eax
+     6 00000ABE 6683C410            <1>
+     7                              <1> %ifdef	USE_TEST_AND_SET
+     8 00000AC2 C705[DC0A0000]0000- <1> 	mov	[IN_USE], dword 0
+     8 00000ACA 0000                <1>
+     9                              <1> %endif
+    10 00000ACC CF                  <1> 	iret
+    11                              <1> 
+    12                              <1> trap_gate_82:
+    13 00000ACD 535251E889F9FFFF66- <1> 	cdecl	draw_pixel, ecx, edx, ebx
+    13 00000AD6 83C40C              <1>
+    14 00000AD9 CF                  <1> 	iret
+    15                              <1> 
+    16 00000ADA 00<rept>            <1> ALIGN	4,	db	0
+    17 00000ADC 00000000            <1> IN_USE:		dd	0
+   115                                  %include	"../modules/protect/test_and_set.s"
+     1                              <1> test_and_set:
+     2 00000AE0 55                  <1> 	push	ebp
+     3 00000AE1 89E5                <1> 	mov	ebp, esp
+     4                              <1> 
+     5 00000AE3 50                  <1> 	push	eax
+     6 00000AE4 53                  <1> 	push	ebx
+     7                              <1> 
+     8 00000AE5 B800000000          <1> 	mov	eax, 0		; set bit
+     9 00000AEA 8B5D08              <1> 	mov	ebx, [ebp + 8]	; global variable
+    10                              <1> 
+    11                              <1> .10L:
+    12 00000AED F00FAB03            <1> 	lock	bts [ebx], eax
+    13 00000AF1 7307                <1> 	jnc	.10E		; we can use registers
+    14                              <1> .12L:
+    15 00000AF3 0FA303              <1> 	bt	[ebx], eax
+    16 00000AF6 72FB                <1> 	jc	.12L		; we can not use
+    17                              <1> 
+    18 00000AF8 EBF3                <1> 	jmp	.10L
+    19                              <1> .10E:
+    20                              <1> 	
+    21 00000AFA 5B                  <1> 	pop	ebx
+    22 00000AFB 58                  <1> 	pop	eax
+    23                              <1> 
+    24 00000AFC 89EC                <1> 	mov	esp, ebp
+    25 00000AFE 5D                  <1> 	pop	ebp
+    26                              <1> 
+    27 00000AFF C3                  <1> 	ret
+    28                              <1> 
+   116                                  ;%include	"../modules/protect/int_timer.s"
+   117                                  %include	"modules/my_int_timer.s"
      1                              <1> int_timer:
-     2 00000AC2 60                  <1> 	pushad
-     3 00000AC3 06                  <1> 	push	es
-     4 00000AC4 1E                  <1> 	push	ds
+     2 00000B00 60                  <1> 	pushad
+     3 00000B01 06                  <1> 	push	es
+     4 00000B02 1E                  <1> 	push	ds
      5                              <1> 
-     6 00000AC5 66B81000            <1> 	mov	ax, 0x10
-     7 00000AC9 8ED8                <1> 	mov	ds, ax
-     8 00000ACB 8EC0                <1> 	mov	es, ax
+     6 00000B03 66B81000            <1> 	mov	ax, 0x10
+     7 00000B07 8ED8                <1> 	mov	ds, ax
+     8 00000B09 8EC0                <1> 	mov	es, ax
      9                              <1> 
-    10 00000ACD FF05[F80A0000]      <1> 	inc	dword[TIMER_COUNT]
+    10 00000B0B FF05[380B0000]      <1> 	inc	dword[TIMER_COUNT]
     11                              <1> 
     12                              <1> 	outp	0x20, 0x20
-    12 00000AD3 B020                <2>  mov al, %2
-    12 00000AD5 E620                <2>  out %1, al
+    12 00000B11 B020                <2>  mov al, %2
+    12 00000B13 E620                <2>  out %1, al
     13                              <1> 	
-    14 00000AD7 660F00C8            <1> 	str	ax
-    15 00000ADB 6683F828            <1> 	cmp	ax, SS_TASK_1
-    16 00000ADF 7409                <1> 	je	.11L		; now 11 run
+    14 00000B15 660F00C8            <1> 	str	ax
+    15 00000B19 6683F828            <1> 	cmp	ax, SS_TASK_1
+    16 00000B1D 7409                <1> 	je	.11L		; now 11 run
     17                              <1> 
     18                              <1> 
-    19 00000AE1 EA000000002800      <1> 	jmp	SS_TASK_1:0
-    20 00000AE8 EB09                <1> 	jmp	.10E
+    19 00000B1F EA000000002800      <1> 	jmp	SS_TASK_1:0
+    20 00000B26 EB09                <1> 	jmp	.10E
     21                              <1> .11L:
-    22 00000AEA EA000000002000      <1> 	jmp	SS_TASK_0:0
-    23 00000AF1 EB00                <1> 	jmp	.10E
+    22 00000B28 EA000000002000      <1> 	jmp	SS_TASK_0:0
+    23 00000B2F EB00                <1> 	jmp	.10E
     24                              <1> .10E:
     25                              <1> 
-    26 00000AF3 1F                  <1> 	pop	ds
-    27 00000AF4 07                  <1> 	pop	es
-    28 00000AF5 61                  <1> 	popad
+    26 00000B31 1F                  <1> 	pop	ds
+    27 00000B32 07                  <1> 	pop	es
+    28 00000B33 61                  <1> 	popad
     29                              <1> 	
-    30 00000AF6 CF                  <1> 	iret
+    30 00000B34 CF                  <1> 	iret
     31                              <1> 
-    32 00000AF7 00                  <1> ALIGN	4,	db	0
-    33 00000AF8 0000000000000000    <1> TIMER_COUNT:	dq	0
+    32 00000B35 00<rept>            <1> ALIGN	4,	db	0
+    33 00000B38 0000000000000000    <1> TIMER_COUNT:	dq	0
     34                              <1> 
     35                              <1> 
     36                              <1> int_en_timer:
-    37 00000B00 55                  <1> 	push	ebp
-    38 00000B01 89E5                <1> 	mov	ebp, esp
+    37 00000B40 55                  <1> 	push	ebp
+    38 00000B41 89E5                <1> 	mov	ebp, esp
     39                              <1> 	
-    40 00000B03 50                  <1> 	push	eax
+    40 00000B43 50                  <1> 	push	eax
     41                              <1> 
     42                              <1> 	outp	0x43, 0b00_11_010_0
-    42 00000B04 B034                <2>  mov al, %2
-    42 00000B06 E643                <2>  out %1, al
+    42 00000B44 B034                <2>  mov al, %2
+    42 00000B46 E643                <2>  out %1, al
     43                              <1> 	; counter 0
     44                              <1> 	; access mode, bottom -> top
     45                              <1> 	; mode, 2
     46                              <1> 	; bcd
     47                              <1> 
     48                              <1> 	outp	0x40, 0x9C
-    48 00000B08 B09C                <2>  mov al, %2
-    48 00000B0A E640                <2>  out %1, al
+    48 00000B48 B09C                <2>  mov al, %2
+    48 00000B4A E640                <2>  out %1, al
     49                              <1> 	outp	0x40, 0x2E
-    49 00000B0C B02E                <2>  mov al, %2
-    49 00000B0E E640                <2>  out %1, al
+    49 00000B4C B02E                <2>  mov al, %2
+    49 00000B4E E640                <2>  out %1, al
     50                              <1> 	; 2E9C(16) = 11932(10) = (1193182 / 100)
     51                              <1> 
-    52 00000B10 58                  <1> 	pop	eax
+    52 00000B50 58                  <1> 	pop	eax
     53                              <1> 
-    54 00000B11 89EC                <1> 	mov 	esp, ebp
-    55 00000B13 5D                  <1> 	pop	ebp
+    54 00000B51 89EC                <1> 	mov 	esp, ebp
+    55 00000B53 5D                  <1> 	pop	ebp
     56                              <1> 
-    57 00000B14 C3                  <1> 	ret
+    57 00000B54 C3                  <1> 	ret
     58                              <1> 
     59                              <1> 
-   116                                  %include	"../modules/protect/draw_rotation_bar.s"
+   118                                  %include	"../modules/protect/draw_rotation_bar.s"
      1                              <1> draw_rotation_bar:
-     2 00000B15 55                  <1> 	push	ebp
-     3 00000B16 89E5                <1> 	mov	ebp, esp
+     2 00000B55 55                  <1> 	push	ebp
+     3 00000B56 89E5                <1> 	mov	ebp, esp
      4                              <1> 	
-     5 00000B18 50                  <1> 	push	eax
+     5 00000B58 50                  <1> 	push	eax
      6                              <1> 
-     7 00000B19 A1[F80A0000]        <1> 	mov	eax, [TIMER_COUNT]
-     8 00000B1E C1E808              <1> 	shr	eax, 8
-     9 00000B21 3B05[4C0B0000]      <1> 	cmp	eax, [.index]	; per 10ms * 16
-    10 00000B27 741E                <1> 	je	.10E
+     7 00000B59 A1[380B0000]        <1> 	mov	eax, [TIMER_COUNT]
+     8 00000B5E C1E808              <1> 	shr	eax, 8
+     9 00000B61 3B05[8C0B0000]      <1> 	cmp	eax, [.index]	; per 10ms * 16
+    10 00000B67 741E                <1> 	je	.10E
     11                              <1> 
-    12 00000B29 A3[4C0B0000]        <1> 	mov	[.index], eax
-    13 00000B2E 83E003              <1> 	and	eax, 0x03
+    12 00000B69 A3[8C0B0000]        <1> 	mov	[.index], eax
+    13 00000B6E 83E003              <1> 	and	eax, 0x03
     14                              <1> 
-    15 00000B31 8A80[500B0000]      <1> 	mov	al, [.table + eax]
-    16 00000B37 506A0F6A1D6A00E864- <1> 	cdecl	draw_char, 0, 29, 0x000F, eax
-    16 00000B40 F7FFFF6683C410      <1>
+    15 00000B71 8A80[900B0000]      <1> 	mov	al, [.table + eax]
+    16 00000B77 506A0F6A1D6A00E824- <1> 	cdecl	draw_char, 0, 29, 0x000F, eax
+    16 00000B80 F7FFFF6683C410      <1>
     17                              <1> .10E:
-    18 00000B47 58                  <1> 	pop	eax
+    18 00000B87 58                  <1> 	pop	eax
     19                              <1> 
-    20 00000B48 89EC                <1> 	mov	esp, ebp
-    21 00000B4A 5D                  <1> 	pop	ebp
+    20 00000B88 89EC                <1> 	mov	esp, ebp
+    21 00000B8A 5D                  <1> 	pop	ebp
     22                              <1> 
-    23 00000B4B C3                  <1> 	ret
+    23 00000B8B C3                  <1> 	ret
     24                              <1> 
     25                              <1> ALIGN	4,	db	0
-    26 00000B4C 00000000            <1> .index:		dd	0
-    27 00000B50 7C2F2D5C            <1> .table:		dd	"|/-\"
-   117                                  %include	"descriptor.s"
+    26 00000B8C 00000000            <1> .index:		dd	0
+    27 00000B90 7C2F2D5C            <1> .table:		dd	"|/-\"
+   119                                  %include	"descriptor.s"
      1                              <1> ; setting of task0 
-     2 00000B54 0000000000000000    <1> LDT:		dq	0x0000_0000_0000_0000
-     3 00000B5C FFFF0000009ACF00    <1> .cs_task_0:	dq	0x00CF_9A00_0000_FFFF
-     4 00000B64 FFFF00000092CF00    <1> .ds_task_0:	dq	0x00CF_9200_0000_FFFF
-     5 00000B6C FFFF000000FACF00    <1> .cs_task_1:	dq	0x00CF_FA00_0000_FFFF
-     6 00000B74 FFFF000000F2CF00    <1> .ds_task_1:	dq	0x00CF_F200_0000_FFFF
+     2 00000B94 0000000000000000    <1> LDT:		dq	0x0000_0000_0000_0000
+     3 00000B9C FFFF0000009ACF00    <1> .cs_task_0:	dq	0x00CF_9A00_0000_FFFF
+     4 00000BA4 FFFF00000092CF00    <1> .ds_task_0:	dq	0x00CF_9200_0000_FFFF
+     5 00000BAC FFFF000000FACF00    <1> .cs_task_1:	dq	0x00CF_FA00_0000_FFFF
+     6 00000BB4 FFFF000000F2CF00    <1> .ds_task_1:	dq	0x00CF_F200_0000_FFFF
      7                              <1> .end:
      8                              <1> 
      9                              <1> ; ldt indexes
@@ -1631,13 +1672,13 @@
     15                              <1> LDT_LIMIT	equ	.end - LDT - 1
     16                              <1> 
     17                              <1> 
-    18 00000B7C 0000000000000000    <1> GDT:		dq	0x0000_0000_0000_0000
-    19 00000B84 FFFF0000009ACF00    <1> .cs_kernel:	dq	0x00CF_9A00_0000_FFFF
-    20 00000B8C FFFF00000092CF00    <1> .ds_kernel:	dq	0x00CF_9200_0000_FFFF
-    21 00000B94 0000000000820000    <1> .ldt		dq	0x0000_8200_0000_0000	; uninitialized
-    22 00000B9C 6700000000890000    <1> .tss_0:		dq	0x0000_8900_0000_0067	; uninitialized(but flags are initialized)
-    23 00000BA4 6700000000890000    <1> .tss_1:		dq	0x0000_8900_0000_0067	; uninitialized(buf flags are initialized)
-    24 00000BAC 0000080004EC0000    <1> .call_gate:	dq	0x0000_EC04_0008_0000
+    18 00000BBC 0000000000000000    <1> GDT:		dq	0x0000_0000_0000_0000
+    19 00000BC4 FFFF0000009ACF00    <1> .cs_kernel:	dq	0x00CF_9A00_0000_FFFF
+    20 00000BCC FFFF00000092CF00    <1> .ds_kernel:	dq	0x00CF_9200_0000_FFFF
+    21 00000BD4 0000000000820000    <1> .ldt		dq	0x0000_8200_0000_0000	; uninitialized
+    22 00000BDC 6700000000890000    <1> .tss_0:		dq	0x0000_8900_0000_0067	; uninitialized(but flags are initialized)
+    23 00000BE4 6700000000890000    <1> .tss_1:		dq	0x0000_8900_0000_0067	; uninitialized(buf flags are initialized)
+    24 00000BEC 0000080004EC0000    <1> .call_gate:	dq	0x0000_EC04_0008_0000
     25                              <1> .end:
     26                              <1> 
     27                              <1> ; gdt indexes
@@ -1648,70 +1689,70 @@
     32                              <1> SS_TASK_1	equ	.tss_1 - GDT
     33                              <1> SS_GATE_0	equ	.call_gate - GDT
     34                              <1> 
-    35 00000BB4 3700                <1> GDTR:		dw	GDT.end - GDT - 1
-    36 00000BB6 [7C0B0000]          <1> 		dd	GDT
+    35 00000BF4 3700                <1> GDTR:		dw	GDT.end - GDT - 1
+    36 00000BF6 [BC0B0000]          <1> 		dd	GDT
     37                              <1> 
     38                              <1> TSS_0:
-    39 00000BBA 00000000            <1> .link:   dd 0
-    40 00000BBE 00321000            <1> .esp0:   dd SP_TASK_0 - STACK_SIZE / 2
-    41 00000BC2 10000000            <1> .ss0:    dd DS_KERNEL
-    42 00000BC6 00000000            <1> .esp1:   dd 0
-    43 00000BCA 00000000            <1> .ss1:    dd 0
-    44 00000BCE 00000000            <1> .esp2:   dd 0
-    45 00000BD2 00000000            <1> .ss2:    dd 0
-    46 00000BD6 00000000            <1> .cr3:    dd 0
-    47 00000BDA 00000000            <1> .eip:    dd 0
-    48 00000BDE 00000000            <1> .eflags: dd 0
-    49 00000BE2 00000000            <1> .eax:    dd 0
-    50 00000BE6 00000000            <1> .ecx:    dd 0
-    51 00000BEA 00000000            <1> .edx:    dd 0
-    52 00000BEE 00000000            <1> .ebx:    dd 0
-    53 00000BF2 00000000            <1> .esp:    dd 0
-    54 00000BF6 00000000            <1> .ebp:    dd 0
-    55 00000BFA 00000000            <1> .esi:    dd 0
-    56 00000BFE 00000000            <1> .edi:    dd 0
-    57 00000C02 00000000            <1> .es:     dd 0
-    58 00000C06 00000000            <1> .cs:     dd 0
-    59 00000C0A 00000000            <1> .ss:     dd 0
-    60 00000C0E 00000000            <1> .ds:     dd 0
-    61 00000C12 00000000            <1> .fs:     dd 0
-    62 00000C16 00000000            <1> .gs:     dd 0
-    63 00000C1A 00000000            <1> .ldt:    dd 0
-    64 00000C1E 00000000            <1> .io:     dd 0
+    39 00000BFA 00000000            <1> .link:   dd 0
+    40 00000BFE 00321000            <1> .esp0:   dd SP_TASK_0 - STACK_SIZE / 2
+    41 00000C02 10000000            <1> .ss0:    dd DS_KERNEL
+    42 00000C06 00000000            <1> .esp1:   dd 0
+    43 00000C0A 00000000            <1> .ss1:    dd 0
+    44 00000C0E 00000000            <1> .esp2:   dd 0
+    45 00000C12 00000000            <1> .ss2:    dd 0
+    46 00000C16 00000000            <1> .cr3:    dd 0
+    47 00000C1A 00000000            <1> .eip:    dd 0
+    48 00000C1E 00000000            <1> .eflags: dd 0
+    49 00000C22 00000000            <1> .eax:    dd 0
+    50 00000C26 00000000            <1> .ecx:    dd 0
+    51 00000C2A 00000000            <1> .edx:    dd 0
+    52 00000C2E 00000000            <1> .ebx:    dd 0
+    53 00000C32 00000000            <1> .esp:    dd 0
+    54 00000C36 00000000            <1> .ebp:    dd 0
+    55 00000C3A 00000000            <1> .esi:    dd 0
+    56 00000C3E 00000000            <1> .edi:    dd 0
+    57 00000C42 00000000            <1> .es:     dd 0
+    58 00000C46 00000000            <1> .cs:     dd 0
+    59 00000C4A 00000000            <1> .ss:     dd 0
+    60 00000C4E 00000000            <1> .ds:     dd 0
+    61 00000C52 00000000            <1> .fs:     dd 0
+    62 00000C56 00000000            <1> .gs:     dd 0
+    63 00000C5A 00000000            <1> .ldt:    dd 0
+    64 00000C5E 00000000            <1> .io:     dd 0
     65                              <1> 
     66                              <1> TSS_1:
-    67 00000C22 00000000            <1> .link:   dd 0
-    68 00000C26 00361000            <1> .esp0:   dd SP_TASK_1 - STACK_SIZE / 2
-    69 00000C2A 10000000            <1> .ss0:    dd DS_KERNEL
-    70 00000C2E 00000000            <1> .esp1:   dd 0
-    71 00000C32 00000000            <1> .ss1:    dd 0
-    72 00000C36 00000000            <1> .esp2:   dd 0
-    73 00000C3A 00000000            <1> .ss2:    dd 0
-    74 00000C3E 00000000            <1> .cr3:    dd 0
-    75 00000C42 [8A0C0000]          <1> .eip:    dd task_1
-    76 00000C46 02020000            <1> .eflags: dd 0x0202
-    77 00000C4A 00000000            <1> .eax:    dd 0
-    78 00000C4E 00000000            <1> .ecx:    dd 0
-    79 00000C52 00000000            <1> .edx:    dd 0
-    80 00000C56 00000000            <1> .ebx:    dd 0
-    81 00000C5A 00381000            <1> .esp:    dd SP_TASK_1
-    82 00000C5E 00000000            <1> .ebp:    dd 0
-    83 00000C62 00000000            <1> .esi:    dd 0
-    84 00000C66 00000000            <1> .edi:    dd 0
-    85 00000C6A 27000000            <1> .es:     dd DS_TASK_1
-    86 00000C6E 1F000000            <1> .cs:     dd CS_TASK_1
-    87 00000C72 27000000            <1> .ss:     dd DS_TASK_1
-    88 00000C76 27000000            <1> .ds:     dd DS_TASK_1
-    89 00000C7A 27000000            <1> .fs:     dd DS_TASK_1
-    90 00000C7E 27000000            <1> .gs:     dd DS_TASK_1
-    91 00000C82 18000000            <1> .ldt:    dd SS_LDT
-    92 00000C86 00000000            <1> .io:     dd 0
+    67 00000C62 00000000            <1> .link:   dd 0
+    68 00000C66 00361000            <1> .esp0:   dd SP_TASK_1 - STACK_SIZE / 2
+    69 00000C6A 10000000            <1> .ss0:    dd DS_KERNEL
+    70 00000C6E 00000000            <1> .esp1:   dd 0
+    71 00000C72 00000000            <1> .ss1:    dd 0
+    72 00000C76 00000000            <1> .esp2:   dd 0
+    73 00000C7A 00000000            <1> .ss2:    dd 0
+    74 00000C7E 00000000            <1> .cr3:    dd 0
+    75 00000C82 [CA0C0000]          <1> .eip:    dd task_1
+    76 00000C86 02020000            <1> .eflags: dd 0x0202
+    77 00000C8A 00000000            <1> .eax:    dd 0
+    78 00000C8E 00000000            <1> .ecx:    dd 0
+    79 00000C92 00000000            <1> .edx:    dd 0
+    80 00000C96 00000000            <1> .ebx:    dd 0
+    81 00000C9A 00381000            <1> .esp:    dd SP_TASK_1
+    82 00000C9E 00000000            <1> .ebp:    dd 0
+    83 00000CA2 00000000            <1> .esi:    dd 0
+    84 00000CA6 00000000            <1> .edi:    dd 0
+    85 00000CAA 27000000            <1> .es:     dd DS_TASK_1
+    86 00000CAE 1F000000            <1> .cs:     dd CS_TASK_1
+    87 00000CB2 27000000            <1> .ss:     dd DS_TASK_1
+    88 00000CB6 27000000            <1> .ds:     dd DS_TASK_1
+    89 00000CBA 27000000            <1> .fs:     dd DS_TASK_1
+    90 00000CBE 27000000            <1> .gs:     dd DS_TASK_1
+    91 00000CC2 18000000            <1> .ldt:    dd SS_LDT
+    92 00000CC6 00000000            <1> .io:     dd 0
     93                              <1> 
-   118                                  %include	"task/task_1.s"
+   120                                  %include	"task/task_1.s"
      1                              <1> task_1:
-     2 00000C8A 68[B80C0000]6A076A- <1> 	cdecl	draw_str, 63, 0, 0x07, .s0
-     2 00000C92 006A3FE80CF7FFFF66- <1>
-     2 00000C9B 83C410              <1>
+     2 00000CCA 68[F80C0000]6A076A- <1> 	cdecl	draw_str, 63, 0, 0x07, .s0
+     2 00000CD2 006A3FE8CCF6FFFF66- <1>
+     2 00000CDB 83C410              <1>
      3                              <1> 	; cdecl	itoa, esp, .t0, 8, 16, 0b0100
      4                              <1> 	; cdecl	draw_str, 0, 2, 0x010F, .s0
      5                              <1> 	;mov	[ESP_COUNTER], esp
@@ -1724,21 +1765,21 @@
     12                              <1> 	
     13                              <1> 	;cdecl	SS_GATE_0:0, 63, 0, 0x07, .s0
     14                              <1> 	
-    15 00000C9E A1[F0010000]        <1> 	mov	eax, [RTC_TIME]
-    16 00000CA3 5068000700006A006A- <1> 	cdecl	draw_time, 72, 0, 0x0700, eax
-    16 00000CAC 48E810FAFFFF6683C4- <1>
-    16 00000CB5 10                  <1>
+    15 00000CDE A1[F0010000]        <1> 	mov	eax, [RTC_TIME]
+    16 00000CE3 5068000700006A006A- <1> 	cdecl	draw_time, 72, 0, 0x0700, eax
+    16 00000CEC 48E8D0F9FFFF6683C4- <1>
+    16 00000CF5 10                  <1>
     17                              <1> 
     18                              <1> 	; jmp	SS_TASK_0:0	
     19                              <1> 
-    20 00000CB6 EBE6                <1> 	jmp	.10L
+    20 00000CF6 EBE6                <1> 	jmp	.10L
     21                              <1> 
     22                              <1> 
     23                              <1> 
-    24 00000CB8 5461736B2D3100      <1> .s0	db	"Task-1", 0
-   119                                  ;%include	"../../../../testOS/src/modules/protect/ring_buff.s"
-   120                                  ;%include	"../../../../testOS/src/modules/protect/some.s"
-   121                                  
-   122                                  
+    24 00000CF8 5461736B2D3100      <1> .s0	db	"Task-1", 0
+   121                                  ;%include	"../../../../testOS/src/modules/protect/ring_buff.s"
+   122                                  ;%include	"../../../../testOS/src/modules/protect/some.s"
    123                                  
-   124 00000CBF 00<rept>                	times	KERNEL_SIZE - ($ - $$)	db	0
+   124                                  
+   125                                  
+   126 00000CFF 00<rept>                	times	KERNEL_SIZE - ($ - $$)	db	0
