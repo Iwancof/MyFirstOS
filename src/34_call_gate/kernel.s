@@ -4,6 +4,7 @@
 %include	"../include/set_vect.s"
 %include	"../include/outp.s"
 %include	"../include/set_desc.s"
+%include	"../include/set_gate.s"
 ;%include	"../../../../testOS/src/include/macro.s"
 
 ORG	KERNEL_LOAD
@@ -46,6 +47,8 @@ kernel:
 	set_vect	0x20, int_timer
 	set_vect	0x21, int_keyboard
 	set_vect	0x28, int_rtc
+
+	set_gate	GDT.call_gate, call_gate
 	
 	cdecl	rtc_int_en, 0x10	; interrupt per udpate
 	cdecl	int_en_timer
@@ -60,10 +63,8 @@ kernel:
 
         cdecl	draw_str, 25, 14, 0x010F, .s0
 
-
-.10L:
-	
 	;jmp	SS_TASK_1:10000
+.10L:
 
 	cdecl	draw_rotation_bar
 
@@ -106,6 +107,7 @@ RTC_TIME:	dd	0
 %include	"../modules/protect/int_keyboard.s"
 ;%include	"../../../../testOS/src/modules/protect/int_keyboard.s"
 %include	"../modules/protect/ring_buff.s"
+%include	"../modules/protect/call_gate.s"
 ;%include	"../modules/protect/int_timer.s"
 %include	"modules/my_int_timer.s"
 %include	"../modules/protect/draw_rotation_bar.s"

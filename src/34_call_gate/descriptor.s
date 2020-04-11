@@ -21,6 +21,7 @@ GDT:		dq	0x0000_0000_0000_0000
 .ldt		dq	0x0000_8200_0000_0000	; uninitialized
 .tss_0:		dq	0x0000_8900_0000_0067	; uninitialized(but flags are initialized)
 .tss_1:		dq	0x0000_8900_0000_0067	; uninitialized(buf flags are initialized)
+.call_gate:	dq	0x0000_EC04_0008_0000
 .end:
 
 ; gdt indexes
@@ -29,6 +30,7 @@ DS_KERNEL	equ	.ds_kernel - GDT
 SS_LDT		equ	.ldt - GDT
 SS_TASK_0	equ	.tss_0 - GDT
 SS_TASK_1	equ	.tss_1 - GDT
+SS_GATE_0	equ	.call_gate - GDT
 
 GDTR:		dw	GDT.end - GDT - 1
 		dd	GDT
