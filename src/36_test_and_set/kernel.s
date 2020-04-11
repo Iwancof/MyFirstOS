@@ -1,4 +1,5 @@
 %define		USE_SYSTEM_CALL
+%define		USE_TEST_AND_SET
 
 %include	"../include/define.s"
 %include	"../include/cdecl.s"
