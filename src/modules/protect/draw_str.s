@@ -19,7 +19,11 @@ draw_str:	; draw_str(row,col,color,str)
 	lodsb
 	cmp	al, 0
 	je	.10E
+%ifdef	USE_SYSTEM_CALL
+	int 0x81
+%else
 	cdecl	draw_char, ebx, ecx, edx, eax
+%endif
 	inc	ebx
 	cmp	ebx, 80
 	jl	.10L
