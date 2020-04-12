@@ -1,5 +1,5 @@
 memcpy:
-	push	rbp
+	push	ebp
 	mov	ebp,esp
 
 	push	edi
