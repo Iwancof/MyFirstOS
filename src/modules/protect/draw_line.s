@@ -72,7 +72,23 @@ draw_line:	; draw_line(X0,Y0,X1,Y0,color)
 	;cdecl	draw_pixel,	dword [ebp - 8], \	; x0
 	;			dword [ebp -20], \	; y0
 	;			dword [ebp +24]		; color
-        cdecl draw_pixel, dword [ebp - 8], dword [ebp - 20], dword [ebp + 24]
+%ifdef	USE_SYSTEM_CALL
+	push	ecx
+	push	edx
+	push	ebx
+
+	mov	ecx, [ebp - 8]
+	mov	edx, [ebp -20]
+	mov	ebx, [ebp +24]
+
+	int	0x82
+
+	pop	ebx
+	pop	edx
+	pop	ecx
+%else	
+	cdecl draw_pixel, dword [ebp - 8], dword [ebp - 20], dword [ebp + 24]
+%endif
 	
 	; update coordinate
 	mov	eax, [esi - 8] 	; abs axis -1 or 0 or -1

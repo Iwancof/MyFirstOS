@@ -21,6 +21,26 @@ struc			ring_buff		; for keyboard
 				.wp	resd	1
 				.item	resb	RING_ITEM_SIZE
 endstruc
+
+struc			rose
+				.x0		resd	1
+				.y0		resd	1
+				.x1		resd	1
+				.y1		resd	1
+
+				.n		resd	1
+				.d		resd	1
+
+				.color_x	resd	1
+				.color_y	resd	1
+				.color_z	resd	1
+				.color_s	resd	1
+				.color_f	resd	1
+				.color_b	resd	1
+				
+				.title		resb	16
+endstruc
+
 ;struc ring_buff
 ;    .rp resd 1                  ; RP:èëÇ´çûÇ›à íu
 ;    .wp resd 1                  ; WP:ì«Ç›çûÇ›à íu
@@ -33,3 +53,4 @@ STACK_SIZE		equ	1024
 SP_TASK_0		equ	STACK_BASE + (STACK_SIZE * 1)
 SP_TASK_1		equ	STACK_BASE + (STACK_SIZE * 2)
 SP_TASK_2		equ	STACK_BASE + (STACK_SIZE * 3)
+SP_TASK_3		equ	STACK_BASE + (STACK_SIZE * 4)
