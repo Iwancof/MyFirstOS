@@ -41,7 +41,7 @@ int_nm:
 	str	esi
 	and	esi, ~0x0007	; exclude TI,RPL bits
 
-	cmp	edi, 0
+	cmp	edi, 0		; first use
 	je	.10F
 
 	cmp	esi, edi
