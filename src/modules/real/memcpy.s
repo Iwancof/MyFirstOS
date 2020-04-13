@@ -1,4 +1,4 @@
-:memcpy	;memcpy(void* dest,void* src,size_t size);
+memcpy:	;memcpy(void* dest,void* src,size_t size);
 	push	bp
 	mov	bp,sp
 
