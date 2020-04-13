@@ -16,10 +16,10 @@ memcmp:
 	repe	cmpsb
 	jnz	.10F	;not match
 	mov	ax,0
-	kmp	.10E	;match
-.10F
+	jmp	.10E	;match
+.10F:
 	mov	ax,-1
-.10E ;exit
+.10E: ;exit
 	
 	pop	di
 	pop	si
