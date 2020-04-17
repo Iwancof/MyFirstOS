@@ -1,0 +1,92 @@
+     1                                  %include	"../include/define.s"
+     1                              <1> VECT_BASE		equ	0x0010_0000
+     2                              <1> KERNEL_LOAD		equ	0x0010_1000
+     3                              <1> STACK_BASE		equ	0x0010_3000
+     4                              <1> CR3_BASE		equ	0x0010_5000
+     5                              <1> RUST_LOAD		equ	0x0000_1000
+     6                              <1> RUST_SIZE		equ	0x0000_6000
+     7                              <1> RUST_SECT		equ	RUST_SIZE / SECT_SIZE
+     8                              <1> RUST_END		equ	RUST_LOAD + RUST_SIZE
+     9                              <1> 
+    10                              <1> BOOT_LOAD		equ	0x7c00
+    11                              <1> BOOT_END		equ	BOOT_LOAD + BOOT_SIZE
+    12                              <1> 
+    13                              <1> BOOT_SIZE		equ	(1024 * 8)
+    14                              <1> SECT_SIZE		equ	(512)
+    15                              <1> BOOT_SECT		equ	(BOOT_SIZE / SECT_SIZE)
+    16                              <1> 
+    17                              <1> E820_RECORD_SIZE	equ	20
+    18                              <1> 
+    19                              <1> KERNEL_SIZE		equ	(1024 * 8)
+    20                              <1> KERNEL_SECT		equ	(KERNEL_SIZE / SECT_SIZE)
+    21                              <1> KERNEL_END		equ	KERNEL_LOAD + KERNEL_SIZE
+    22                              <1> ; KERNEL_END : 0x0010_3000
+    23                              <1> 
+    24                              <1> 
+    25                              <1> %define			RING_ITEM_SIZE	(1 << 4)
+    26                              <1> %define			RING_INDEX_MASK	(RING_ITEM_SIZE - 1)
+    27                              <1> 
+    28                              <1> struc			ring_buff		; for keyboard
+    29 00000000 <res 00000004>      <1> 				.rp	resd	1
+    30 00000004 <res 00000004>      <1> 				.wp	resd	1
+    31 00000008 <res 00000010>      <1> 				.item	resb	RING_ITEM_SIZE
+    32                              <1> endstruc
+    33                              <1> 
+    34                              <1> struc			rose
+    35 00000000 <res 00000004>      <1> 				.x0		resd	1
+    36 00000004 <res 00000004>      <1> 				.y0		resd	1
+    37 00000008 <res 00000004>      <1> 				.x1		resd	1
+    38 0000000C <res 00000004>      <1> 				.y1		resd	1
+    39                              <1> 
+    40 00000010 <res 00000004>      <1> 				.n		resd	1
+    41 00000014 <res 00000004>      <1> 				.d		resd	1
+    42                              <1> 
+    43 00000018 <res 00000004>      <1> 				.color_x	resd	1
+    44 0000001C <res 00000004>      <1> 				.color_y	resd	1
+    45 00000020 <res 00000004>      <1> 				.color_z	resd	1
+    46 00000024 <res 00000004>      <1> 				.color_s	resd	1
+    47 00000028 <res 00000004>      <1> 				.color_f	resd	1
+    48 0000002C <res 00000004>      <1> 				.color_b	resd	1
+    49                              <1> 				
+    50 00000030 <res 00000010>      <1> 				.title		resb	16
+    51                              <1> endstruc
+    52                              <1> 
+    53                              <1> ;struc ring_buff
+    54                              <1> ;    .rp resd 1                  ; RP:書き込み位置
+    55                              <1> ;    .wp resd 1                  ; WP:読み込み位置
+    56                              <1> ;    .item resb RING_ITEM_SIZE   ; バッファ
+    57                              <1> ;endstruc
+    58                              <1> 
+    59                              <1> STACK_SIZE		equ	1024
+    60                              <1> 
+    61                              <1> SP_TASK_0		equ	STACK_BASE + (STACK_SIZE * 1)
+    62                              <1> SP_TASK_1		equ	STACK_BASE + (STACK_SIZE * 2)
+    63                              <1> SP_TASK_2		equ	STACK_BASE + (STACK_SIZE * 3)
+    64                              <1> SP_TASK_3		equ	STACK_BASE + (STACK_SIZE * 4)
+    65                              <1> SP_TASK_4		equ	STACK_BASE + (STACK_SIZE * 5)
+    66                              <1> SP_TASK_5		equ	STACK_BASE + (STACK_SIZE * 6)
+    67                              <1> SP_TASK_6		equ	STACK_BASE + (STACK_SIZE * 7)
+    68                              <1> SP_TASK_T		equ	STACK_BASE + (STACK_SIZE * 8)
+    69                              <1> 
+    70                              <1> PARAM_TASK_4		equ	0x0010_8000
+    71                              <1> PARAM_TASK_5		equ	0x0010_9000
+    72                              <1> PARAM_TASK_6		equ	0x0010_A000
+    73                              <1> 
+    74                              <1> CR3_TASK_4		equ	0x0020_0000
+    75                              <1> CR3_TASK_5		equ	0x0020_2000
+    76                              <1> CR3_TASK_6		equ	0x0020_4000
+    77                              <1> CR3_TASK_T		equ	0x0020_6000
+    78                              <1> 
+    79                              <1> FAT_SIZE equ (1024 * 128)
+    80                              <1> ROOT_SIZE equ (1024 * 16)
+    81                              <1> 
+    82                              <1> FAT1_START equ (KERNEL_SIZE)
+    83                              <1> FAT2_START equ (FAT1_START + FAT_SIZE)
+    84                              <1> ROOT_START equ (FAT2_START + FAT_SIZE)
+    85                              <1> FILE_START equ (ROOT_START + ROOT_SIZE)
+    86                              <1> 
+    87                              <1> ATTR_VOLUME_ID equ 0x08
+    88                              <1> ATTR_ARCHIVE equ 0x20
+    89                              <1> 
+     2                                  
+     3 00000000 02<rept>                times	BOOT_LOAD - RUST_LOAD	db	0x02

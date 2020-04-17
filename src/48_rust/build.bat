@@ -4,6 +4,7 @@ rustc .\os_test.rs --crate-type=staticlib -C lto -C opt-level=0 -C no-prepopulat
 cd ..
 nasm	boot.s -o boot.bin -l boot.lst
 nasm	kernel.s -o kernel.bin -l kernel.lst
-echo "i686-unknown-linux-gnu-ld os_test.o -e init_os -o os_test.bin -Ttext 0x6000"
+nasm	space.s -o space.bin -l space.lst
+echo "i686-unknown-linux-gnu-ld os_test.o -e init_os -o os_test.bin -Ttext 0x1000"
 pause
-copy	/B boot.bin+kernel.bin+rust\os_test.bin boot.img
+copy	/B boot.bin+kernel.bin+rust\os_test.bin+space.bin boot.img

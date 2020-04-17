@@ -251,26 +251,12 @@ stage_5:
 	cdecl	puts, .e0
 	call	reboot
 .10E:
-	cdecl	itoa, RUST_SECT, .t1, 8, 16, 0b0100
-	cdecl	puts, .t2
-
-	cdecl	read_lba, BOOT, BOOT_SECT + KERNEL_SECT, RUST_SECT, RUST_LOAD	; KERNEL_SIZE is end of kernel
-	cdecl	itoa, ax, .t0, 8, 16, 0b0100
-	cdecl	puts, .t0
-	cmp	ax, RUST_SECT	; 17 sectors
-	jz	.11E
-	cdecl	puts, .e1
-	call	reboot
-
-.11E:
+	
 	jmp	stage_6
 
 .s0:	db	"5th stage...",0x0A,0x0D,0
 .e0:	db	" Failure load kernel...",0x0A,0x0D,0
-.e1:	db	" Failure load rust...",0x0A,0x0D,0
-.t0:	db	"--------", 0
-.t2:	db	"0x"
-.t1:	db	"--------", 0
+
 
 stage_6:
 	cdecl	puts, .s0
@@ -525,10 +511,8 @@ fat_find_file:
 
 .s0:	db	'SPECIAL TXT', 0
 
-
-
-	times	BOOT_SIZE - ($ - $$) - 16	db	0
+	times BOOT_SIZE - ($ - $$) - 16	db	0
 
 	dd	TO_REAL_MODE
 	
-	times	BOOT_SIZE - ($ - $$)	db	0
+	times BOOT_SIZE - ($ - $$)	db	0

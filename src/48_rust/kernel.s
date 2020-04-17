@@ -91,22 +91,20 @@ kernel:
 	
 	;jmp	SS_TASK_1:10000
 
-	cdecl	draw_num, .10T, 0, 10
-	
-.10T:
 
 
-	mov	eax, 0x4321
+	; mov	eax, 0x4321
 	;cdecl	BOOT_SIZE + KERNEL_SIZE + 0x1000
-	cdecl	RUST_LOAD + 0x1010
+	cdecl	RUST_LOAD + 0x1003
 	; mov	eax, BOOT_SIZE + KERNEL_SIZE + 0x1000
 	; cdecl	draw_num, func, 0, 0
 
 	; call	0x104F00
 	; cdecl	draw_num, BOOT_SIZE + KERNEL_SIZE , 0, 0
-	; cdecl	draw_num, eax, 0, 0
+	cdecl	draw_num, eax, 0, 0
 	; db	0x12, 0x34, 0x56, 0x78
-
+	
+	; cdecl	0x1000, 0x1234, 0, 2
 	jmp	$
 
 .10L:
@@ -202,15 +200,31 @@ ope_exce:
 
 ;%include	"../../../../testOS/src/modules/protect/ring_buff.s"
 ;%include	"../../../../testOS/src/modules/protect/some.s"
+test_func:
+	cdecl	draw_str, 0, 20, 0x010F, .t0
+	ret
+
+.t0:	db	"Test message", 0
+
+debug:
+	push	ebp
+	mov	ebp, esp
+	cdecl	draw_str, 0, 1, 0x010F, .t0
+	mov	esp, ebp
+	pop	ebp
+
+	ret
+.t0:	db	"test"
 
 	times	KERNEL_SIZE - ($ - $$) - 0x100	db	1
 
 func:	dd	draw_num
+	dd	test_func
+	; dd	draw_str
+	dd	draw_str
 
-draw_some:
-	cdecl	draw_num, 0x3212, 0, 6
-	mov	eax, 0x9876
-	ret
+
+
 
 
 	times	KERNEL_SIZE - ($ - $$)	db	1

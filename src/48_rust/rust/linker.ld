@@ -1,4 +1,3 @@
-  
 /*
 kernel.ls
 kotetuco 2008 - 2016
@@ -8,32 +7,61 @@ kotetuco 2008 - 2016
 
 /*出力オブジェクトファイル(Makefileで定義)*/
 
-ENTRY(os_init)
+
+ENTRY(init_os)
 
 /*出力フォーマット*/
-OUTPUT_FORMAT("binary")
+/* OUTPUT_FORMAT("binary") */
+
+/* _GLOBAL_OFFSET_TABLE(0) */
 
 /*セクション*/
 SECTIONS{
-	/*.textセクションのメモリ開始位置*/
-	.text 0x6000 : SUBALIGN(1)
+	/*.hrbオブジェクトファイルのフォーマットに従い、ヘッダを定義*/
+  	/*
+	.head 0x0 :
 	{
+		LONG((ADDR(.bss) + SIZEOF(.bss) + 0xfff) & ~ 0xfff)
+		BYTE(0x48) BYTE(0x61) BYTE(0x72) BYTE(0x69)
+		LONG(0x0)
+		LONG(ADDR(.data))
+		LONG(SIZEOF(.data))
+		LONG(LOADADDR(.data))
+		LONG(0xe9000000)
+		LONG(init_os - 0x20)
+		LONG((ADDR(.bss) + SIZEOF(.bss) + 0xf) & ~ 0xf)
+	}
+	*/
+
+
+	/*.textセクションのメモリ開始位置*/
+	.text 0x1000 : AT(0x1000) SUBALIGN(1)
+	{
+		*(.text*)
 		/*.textセクション全部を含む*/
 		*(.text.init_os)
-		*(.text*)
 	}
 
 	/*.dataセクションのメモリ開始位置*/
-	.data 0x7000:
+	.data LOADADDR(.text) + SIZEOF(.text):
 	/*.data :*/
 
 	/*.dataセクションのファイル上の開始位置*/
-	AT(0x7000) SUBALIGN(4)
+	AT(LOADADDR(.text) + SIZEOF(.text)) SUBALIGN(4)
 	{
-		*(.data)
-		*(.rodata*)
+		*(.data*)
+		*(.rodata*)	
+	}
+
+	/*.bssセクションのメモリ開始位置(.dataセクションの終端から)*/
+	.bss :
+
+	/*.bssセクションのファイル上の開始位置*/
+	AT(LOADADDR(.data) + SIZEOF(.data)) SUBALIGN(4)
+	{
+		*(.bss*)
 	}
 
 	/* 上記以外のセクションは無視する */
-	/DISCARD/ : {*(*)}
+	.else : {*(*)} 
 }

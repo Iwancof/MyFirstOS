@@ -16,7 +16,7 @@
     12                              <1> 
     13                              <1> E820_RECORD_SIZE	equ	20
     14                              <1> 
-    15                              <1> KERNEL_SIZE		equ	(1024 * 8)
+    15                              <1> KERNEL_SIZE		equ	(1024 * 16)
     16                              <1> KERNEL_SECT		equ	(KERNEL_SIZE / SECT_SIZE)
     17                              <1> 
     18                              <1> 
@@ -63,26 +63,28 @@
     59                              <1> SP_TASK_4		equ	STACK_BASE + (STACK_SIZE * 5)
     60                              <1> SP_TASK_5		equ	STACK_BASE + (STACK_SIZE * 6)
     61                              <1> SP_TASK_6		equ	STACK_BASE + (STACK_SIZE * 7)
-    62                              <1> 
-    63                              <1> PARAM_TASK_4		equ	0x0010_8000
-    64                              <1> PARAM_TASK_5		equ	0x0010_9000
-    65                              <1> PARAM_TASK_6		equ	0x0010_A000
-    66                              <1> 
-    67                              <1> CR3_TASK_4		equ	0x0020_0000
-    68                              <1> CR3_TASK_5		equ	0x0020_2000
-    69                              <1> CR3_TASK_6		equ	0x0020_4000
-    70                              <1> 
-    71                              <1> FAT_SIZE equ (1024 * 128)
-    72                              <1> ROOT_SIZE equ (1024 * 16)
-    73                              <1> 
-    74                              <1> FAT1_START equ (KERNEL_SIZE)
-    75                              <1> FAT2_START equ (FAT1_START + FAT_SIZE)
-    76                              <1> ROOT_START equ (FAT2_START + FAT_SIZE)
-    77                              <1> FILE_START equ (ROOT_START + ROOT_SIZE)
-    78                              <1> 
-    79                              <1> ATTR_VOLUME_ID equ 0x08
-    80                              <1> ATTR_ARCHIVE equ 0x20
-    81                              <1> 
+    62                              <1> SP_TASK_T		equ	STACK_BASE + (STACK_SIZE * 8)
+    63                              <1> 
+    64                              <1> PARAM_TASK_4		equ	0x0010_8000
+    65                              <1> PARAM_TASK_5		equ	0x0010_9000
+    66                              <1> PARAM_TASK_6		equ	0x0010_A000
+    67                              <1> 
+    68                              <1> CR3_TASK_4		equ	0x0020_0000
+    69                              <1> CR3_TASK_5		equ	0x0020_2000
+    70                              <1> CR3_TASK_6		equ	0x0020_4000
+    71                              <1> CR3_TASK_T		equ	0x0020_6000
+    72                              <1> 
+    73                              <1> FAT_SIZE equ (1024 * 128)
+    74                              <1> ROOT_SIZE equ (1024 * 16)
+    75                              <1> 
+    76                              <1> FAT1_START equ (KERNEL_SIZE)
+    77                              <1> FAT2_START equ (FAT1_START + FAT_SIZE)
+    78                              <1> ROOT_START equ (FAT2_START + FAT_SIZE)
+    79                              <1> FILE_START equ (ROOT_START + ROOT_SIZE)
+    80                              <1> 
+    81                              <1> ATTR_VOLUME_ID equ 0x08
+    82                              <1> ATTR_ARCHIVE equ 0x20
+    83                              <1> 
      5                                  %include	"../include/cdecl.s"
      1                              <1> %macro	cdecl	1-*.nolist
      2                              <1> 	%rep	%0 - 1
@@ -419,61 +421,62 @@
     90                                  	
     91                                  	;jmp	SS_TASK_1:10000
     92                                  
-    93                                  .10L:
+    93                                  
     94                                  
-    95 0000025F E8550F0000              	cdecl	draw_rotation_bar
+    95                                  .10L:
     96                                  
-    97 00000264 68[0C030000]68-         	cdecl	ring_rd, _KEY_BUFF, .int_key
-    97 0000026A [D00A0000]E8750800-
-    97 00000272 006683C408         
-    98 00000277 83F800                  	cmp	eax, 0
-    99 0000027A 74E3                    	je	.10L
-   100                                  
-   101 0000027C 68[D00A0000]6A1D6A-     	cdecl	draw_key, 2, 29, _KEY_BUFF
-   101 00000284 02E8BA0800006683C4-
-   101 0000028D 0C                 
+    97 0000025F E8550F0000              	cdecl	draw_rotation_bar
+    98                                  
+    99 00000264 68[0C030000]68-         	cdecl	ring_rd, _KEY_BUFF, .int_key
+    99 0000026A [D00A0000]E8750800-
+    99 00000272 006683C408         
+   100 00000277 83F800                  	cmp	eax, 0
+   101 0000027A 74E3                    	je	.10L
    102                                  
-   103 0000028E A0[0C030000]            	mov	al, [.int_key]
-   104 00000293 3C02                    	cmp	al, 0x02
-   105 00000295 7522                    	jne	.14L
-   106                                  
-   107 00000297 FF15F09B0000            	call	[BOOT_LOAD + BOOT_SIZE - 16]
-   108 0000029D BE00780000              	mov	esi, 0x7800
-   109 000002A2 C6462000                	mov	[esi + 32], byte 0
-   110 000002A6 5668040F00006A006A-     	cdecl	draw_str, 0, 0, 0x0F04, esi
-   110 000002AF 00E8320200006683C4-
-   110 000002B8 10                 
-   111                                  
-   112                                  .14L:
-   113                                  	
-   114 000002B9 A0[0C030000]            	mov	al, [.int_key]
-   115 000002BE 50E8460A00006683C4-     	cdecl	ctrl_alt_end, eax
-   115 000002C7 04                 
-   116 000002C8 83F800                  	cmp	eax, 0
-   117 000002CB 7492                    	je	.10L
-   118                                  
-   119 000002CD B800000000              	mov	eax, 0
-   120 000002D2 0FAB05[10030000]        	bts	[.once], eax
-   121 000002D9 7284                    	jc	.10L
-   122 000002DB E89C0A0000              	cdecl	power_off
-   123                                  
-   124 000002E0 E97AFFFFFF              	jmp	.10L
-   125                                  	
+   103 0000027C 68[D00A0000]6A1D6A-     	cdecl	draw_key, 2, 29, _KEY_BUFF
+   103 00000284 02E8BA0800006683C4-
+   103 0000028D 0C                 
+   104                                  
+   105 0000028E A0[0C030000]            	mov	al, [.int_key]
+   106 00000293 3C02                    	cmp	al, 0x02
+   107 00000295 7522                    	jne	.14L
+   108                                  
+   109 00000297 FF15F09B0000            	call	[BOOT_LOAD + BOOT_SIZE - 16]
+   110 0000029D BE00780000              	mov	esi, 0x7800
+   111 000002A2 C6462000                	mov	[esi + 32], byte 0
+   112 000002A6 5668040F00006A006A-     	cdecl	draw_str, 0, 0, 0x0F04, esi
+   112 000002AF 00E8320200006683C4-
+   112 000002B8 10                 
+   113                                  
+   114                                  .14L:
+   115 000002B9 A0[0C030000]            	mov	al, [.int_key]
+   116 000002BE 50E8460A00006683C4-     	cdecl	ctrl_alt_end, eax
+   116 000002C7 04                 
+   117 000002C8 83F800                  	cmp	eax, 0
+   118 000002CB 7492                    	je	.10L
+   119                                  
+   120 000002CD B800000000              	mov	eax, 0
+   121 000002D2 0FAB05[10030000]        	bts	[.once], eax
+   122 000002D9 7284                    	jc	.10L
+   123 000002DB E89C0A0000              	cdecl	power_off
+   124                                  
+   125 000002E0 E97AFFFFFF              	jmp	.10L
    126                                  	
-   127 000002E5 2048656C6C6F2C206B-     .s0:	db	" Hello, kernel! ", 0
-   127 000002EE 65726E656C212000   
-   128 000002F6 2D2D2D2D00              .t0:	db	"----",0
-   129 000002FB 2D2D2D2D2D2D2D2D2D-     .t1:	db	"----------------",0
-   129 00000304 2D2D2D2D2D2D2D00   
-   130 0000030C 00000000                .int_key:	dd	0
-   131 00000310 00000000                .once:		dd	0
-   132                                  
-   133                                  ALIGN	4,	db	0
-   134 00000314 00000000                FONT_ADR:	dd	0
-   135 00000318 00000000                RTC_TIME:	dd	0
-   136                                  
+   127                                  	
+   128 000002E5 2048656C6C6F2C206B-     .s0:	db	" Hello, kernel! ", 0
+   128 000002EE 65726E656C212000   
+   129 000002F6 2D2D2D2D00              .t0:	db	"----",0
+   130 000002FB 2D2D2D2D2D2D2D2D2D-     .t1:	db	"----------------",0
+   130 00000304 2D2D2D2D2D2D2D00   
+   131 0000030C 00000000                .int_key:	dd	0
+   132 00000310 00000000                .once:		dd	0
+   133                                  
+   134                                  ALIGN	4,	db	0
+   135 00000314 00000000                FONT_ADR:	dd	0
+   136 00000318 00000000                RTC_TIME:	dd	0
    137                                  
-   138                                  %include	"../modules/protect/vga.s"
+   138                                  
+   139                                  %include	"../modules/protect/vga.s"
      1                              <1> vga_set_read_plane:	; cga_set_read_plane(plane)
      2                              <1> ; this function only selects read plane
      3 0000031C 55                  <1> 	push	ebp
@@ -619,7 +622,7 @@
    143                              <1> 
    144 000003CE C3                  <1> 	ret
    145                              <1> 
-   139                                  %include	"../modules/protect/memcpy.s"
+   140                                  %include	"../modules/protect/memcpy.s"
      1                              <1> memcpy:
      2 000003CF 55                  <1> 	push	ebp
      3 000003D0 89E5                <1> 	mov	ebp,esp
@@ -644,7 +647,7 @@
     22                              <1> 
     23 000003E7 C3                  <1> 	ret
     24                              <1> 
-   140                                  %include	"../modules/protect/draw_char.s"
+   141                                  %include	"../modules/protect/draw_char.s"
      1                              <1> draw_char:
      2                              <1> ; draw_char(row,col,color,ch)
      3 000003E8 55                  <1> 	push	ebp
@@ -709,7 +712,7 @@
     50 000004AB C3                  <1> 	ret
     51                              <1> 
     52                              <1> 	
-   141                                  %include	"../modules/protect/draw_font.s"
+   142                                  %include	"../modules/protect/draw_font.s"
      1                              <1> draw_font:
      2 000004AC 55                  <1> 	push	ebp
      3 000004AD 89E5                <1> 	mov	ebp, esp
@@ -750,7 +753,7 @@
     37                              <1> 
     38                              <1> 
     39                              <1> 
-   142                                  %include	"../modules/protect/draw_str.s"
+   143                                  %include	"../modules/protect/draw_str.s"
      1                              <1> draw_str:	; draw_str(row,col,color,str)
      2 000004E7 55                  <1> 	push	ebp
      3 000004E8 89E5                <1> 	mov	ebp, esp
@@ -799,7 +802,7 @@
     46 00000523 5D                  <1> 	pop	ebp
     47                              <1> 
     48 00000524 C3                  <1> 	ret
-   143                                  %include	"../modules/protect/draw_color_bar.s"
+   144                                  %include	"../modules/protect/draw_color_bar.s"
      1                              <1> draw_color_bar:	; draw_color_bar(row,col)
      2 00000525 55                  <1> 	push	ebp
      3 00000526 89E5                <1> 	mov	ebp, esp
@@ -864,7 +867,7 @@
     61 00000593 0005000D            <1> 	dw 0x0500,0x0D00
     62 00000597 0006000E            <1> 	dw 0x0600,0x0E00
     63 0000059B 0007000F            <1> 	dw 0x0700,0x0F00
-   144                                  %include	"../modules/protect/draw_pixel.s"
+   145                                  %include	"../modules/protect/draw_pixel.s"
      1                              <1> draw_pixel:	; draw_pixel(X,Y,color)
      2                              <1> ; X,Y is PIXEL data
      3 0000059F 55                  <1> 	push	ebp
@@ -930,7 +933,7 @@
     51                              <1> 
     52 0000065F C3                  <1> 	ret
     53                              <1> 
-   145                                  %include	"../modules/protect/draw_line.s"
+   146                                  %include	"../modules/protect/draw_line.s"
      1                              <1> draw_line:	; draw_line(X0,Y0,X1,Y0,color)
      2 00000660 55                  <1> 	push	ebp
      3 00000661 89E5                <1> 	mov	ebp, esp
@@ -1059,7 +1062,7 @@
    126 00000710 C3                  <1> 	ret
    127                              <1> 
    128                              <1> 
-   146                                  %include	"../modules/protect/draw_rect.s"
+   147                                  %include	"../modules/protect/draw_rect.s"
      1                              <1> draw_rect:	; draw_rect(x0,y0,x1,y1,color)
      2 00000711 55                  <1> 	push	ebp
      3 00000712 89E5                <1> 	mov	ebp, esp
@@ -1119,7 +1122,7 @@
     53                              <1> 
     54 00000776 C3                  <1> 	ret
     55                              <1> 
-   147                                  %include	"../modules/protect/itoa.s"
+   148                                  %include	"../modules/protect/itoa.s"
      1                              <1> itoa:	;itoa(num,buf,size,radix,flag);
      2 00000777 55                  <1> 	push 	ebp
      3 00000778 89E5                <1> 	mov	ebp, esp
@@ -1215,7 +1218,7 @@
     92                              <1> 	
     93                              <1> 	
     94                              <1> 	
-   148                                  %include	"../modules/protect/draw_time.s"
+   149                                  %include	"../modules/protect/draw_time.s"
      1                              <1> draw_time:	; draw_time(col, row, color, time)
      2 00000802 55                  <1> 	push	ebp
      3 00000803 89E5                <1> 	mov	ebp, esp
@@ -1256,7 +1259,7 @@
     30 0000086E 5A5A3A              <1> .hour:	db	"ZZ:"
     31 00000871 5A5A3A              <1> .min:	db	"ZZ:"
     32 00000874 5A5A00              <1> .sec:	db	"ZZ", 0
-   149                                  %include	"../modules/protect/rtc.s"
+   150                                  %include	"../modules/protect/rtc.s"
      1                              <1> rtc_get_time:
      2 00000877 55                  <1> 	push	ebp
      3 00000878 89E5                <1> 	mov	ebp, esp
@@ -1308,7 +1311,7 @@
     49 000008B7 C3                  <1> 	ret
     50                              <1> 
     51                              <1> 
-   150                                  %include	"../modules/protect/int_rtc.s"
+   151                                  %include	"../modules/protect/int_rtc.s"
      1                              <1> int_rtc:
      2 000008B8 60                  <1> 	pusha		; all registers in stack
      3 000008B9 1E                  <1> 	push	ds
@@ -1359,7 +1362,7 @@
     43                              <1> 
     44 000008F4 C3                  <1> 	ret
     45                              <1> 
-   151                                  %include	"../modules/protect/pic.s"
+   152                                  %include	"../modules/protect/pic.s"
      1                              <1> init_pic:	; () -> ()
      2                              <1> ; see p298
      3                              <1> ; ICW -- Initializion command words
@@ -1400,7 +1403,7 @@
     18 0000091E 58                  <1> 	pop	eax
     19                              <1> 
     20 0000091F C3                  <1> 	ret
-   152                                  %include	"../modules/protect/interrupt.s"
+   153                                  %include	"../modules/protect/interrupt.s"
      1                              <1> int_stop:
      2 00000920 FB                  <1> 	sti
      3                              <1> 
@@ -1518,7 +1521,7 @@
     92                              <1> 
     93 00000A9B 203C20205A45524F5F- <1> .s0:	db	" <  ZERO_DIV  > ", 0
     93 00000AA4 44495620203E2000    <1>
-   153                                  %include	"../modules/protect/int_keyboard.s"
+   154                                  %include	"../modules/protect/int_keyboard.s"
      1                              <1> int_keyboard:
      2 00000AAC 60                  <1> 	pusha
      3 00000AAD 1E                  <1> 	push	ds
@@ -1552,8 +1555,8 @@
     28                              <1> ; ring_buff_size is struct "ring_buff"'s size created by nasm
     29                              <1> 
     30                              <1> 	
-   154                                  ;%include	"../../../../testOS/src/modules/protect/int_keyboard.s"
-   155                                  %include	"../modules/protect/ring_buff.s"
+   155                                  ;%include	"../../../../testOS/src/modules/protect/int_keyboard.s"
+   156                                  %include	"../modules/protect/ring_buff.s"
      1                              <1> ring_rd:	; ring_rd(ring_address, dest_address)
      2                              <1> 		; return eax
      3 00000AE8 55                  <1> 	push	ebp
@@ -1668,7 +1671,7 @@
    108 00000B93 C3                  <1> 	ret
    109                              <1> 
    110 00000B94 2D2D00              <1> .tmp:	db	"--",0
-   156                                  %include	"../modules/protect/call_gate.s"
+   157                                  %include	"../modules/protect/call_gate.s"
      1                              <1> call_gate:
      2                              <1> 	;retf	4 * 4
      3                              <1> ; if SS_GATE_0 called
@@ -1726,7 +1729,7 @@
     54 00000BCE 7461736B5F3100      <1> .t1:	db	"task_1",0
     55 00000BD5 2D2D2D2D2D2D2D2D00  <1> .t2:	db	"--------", 0
     56 00000BDE 2D2D2D2D2D2D2D2D00  <1> .t3:	db	"--------", 0
-   157                                  %include	"../modules/protect/trap_gate.s"
+   158                                  %include	"../modules/protect/trap_gate.s"
      1                              <1> ; system calls
      2                              <1> trap_gate_81:	; system call 81, draw_char
      3                              <1> %ifdef	USE_TEST_AND_SET
@@ -1757,7 +1760,7 @@
     22 00000C32 00<rept>            <1> ALIGN	4,		db	0
     23 00000C34 00000000            <1> IN_USE_81:		dd	0
     24 00000C38 00000000            <1> IN_USE_82:		dd	0
-   158                                  %include	"../modules/protect/test_and_set.s"
+   159                                  %include	"../modules/protect/test_and_set.s"
      1                              <1> test_and_set:
      2 00000C3C 55                  <1> 	push	ebp
      3 00000C3D 89E5                <1> 	mov	ebp, esp
@@ -1786,7 +1789,7 @@
     26                              <1> 
     27 00000C5B C3                  <1> 	ret
     28                              <1> 
-   159                                  %include	"../modules/protect/int_nm.s"
+   160                                  %include	"../modules/protect/int_nm.s"
      1                              <1> get_tss_base:
      2                              <1> 	; eax : return value
      3                              <1> 	; ebx : segment selector
@@ -1870,7 +1873,7 @@
     80                              <1> 
     81 00000CE5 00<rept>            <1> ALIGN	4,	db	0
     82 00000CE8 00000000            <1> .last_tss:	dd	0
-   160                                  %include	"../modules/protect/wait_tick.s"
+   161                                  %include	"../modules/protect/wait_tick.s"
      1                              <1> wait_tick:
      2 00000CEC 55                  <1> 	push	ebp
      3 00000CED 89E5                <1> 	mov	ebp, esp
@@ -1894,7 +1897,7 @@
     21                              <1> 
     22 00000D09 C3                  <1> 	ret
     23                              <1> 
-   161                                  %include	"../modules/protect/ctrl_alt_end.s"
+   162                                  %include	"../modules/protect/ctrl_alt_end.s"
      1                              <1> ctrl_alt_end:
      2 00000D0A 55                  <1> 	push	ebp
      3 00000D0B 89E5                <1> 	mov	ebp, esp
@@ -1931,7 +1934,7 @@
     34                              <1> 
     35                              <1> 
     36 00000D5C 00<rept>            <1> .key_state:	times	32	db	0
-   162                                  %include	"../modules/protect/power_off.s"
+   163                                  %include	"../modules/protect/power_off.s"
      1                              <1> power_off:
      2 00000D7C 55                  <1> 	push	ebp
      3 00000D7D 89E5                <1> 	mov	ebp, esp
@@ -2067,7 +2070,7 @@
    114                              <1> 
    115                              <1> 
    116                              <1> 
-   163                                  %include	"../modules/protect/acpi_find.s"
+   164                                  %include	"../modules/protect/acpi_find.s"
      1                              <1> acpi_find:
      2 00000F30 55                  <1> 	push	ebp
      3 00000F31 89E5                <1> 	mov	ebp, esp
@@ -2105,7 +2108,7 @@
     35                              <1> 
     36 00000F5D C3                  <1> 	ret
     37                              <1> 
-   164                                  %include	"../modules/protect/find_rsdt_entry.s"
+   165                                  %include	"../modules/protect/find_rsdt_entry.s"
      1                              <1> find_rsdt_entry:
      2 00000F5E 55                  <1> 	push	ebp
      3 00000F5F 89E5                <1> 	mov	ebp, esp
@@ -2146,7 +2149,7 @@
     38 00000F8B 5D                  <1> 	pop	ebp
     39                              <1> 
     40 00000F8C C3                  <1> 	ret
-   165                                  %include	"../modules/protect/acpi_package_value.s"
+   166                                  %include	"../modules/protect/acpi_package_value.s"
      1                              <1> acpi_package_value:
      2 00000F8D 55                  <1> 	push	ebp
      3 00000F8E 89E5                <1> 	mov	ebp, esp
@@ -2196,8 +2199,8 @@
     47 00000FC6 C3                  <1> 	ret
     48                              <1> 	
     49                              <1> 
-   166                                  ;%include	"../modules/protect/int_pf.s"
-   167                                  %include	"modules/paging.s"
+   167                                  ;%include	"../modules/protect/int_pf.s"
+   168                                  %include	"modules/paging.s"
      1                              <1> page_set_4m:
      2 00000FC7 55                  <1> 	push	ebp
      3 00000FC8 89E5                <1> 	mov	ebp, esp
@@ -2267,7 +2270,7 @@
     52                              <1> 
     53 000010B4 C3                  <1> 	ret
     54                              <1> 
-   168                                  %include	"modules/int_pf.s"
+   169                                  %include	"modules/int_pf.s"
      1                              <1> int_pf:
      2 000010B5 55                  <1> 	push	ebp
      3 000010B6 89E5                <1> 	mov	ebp, esp
@@ -2319,8 +2322,8 @@
     46 0000110A 203C20504147452046- <1> .s0	db	" < PAGE FAULT > ", 0
     46 00001113 41554C54203E2000    <1>
     47                              <1> 
-   169                                  ;%include	"../modules/protect/int_timer.s"
-   170                                  %include	"modules/my_int_timer.s"
+   170                                  ;%include	"../modules/protect/int_timer.s"
+   171                                  %include	"modules/my_int_timer.s"
      1                              <1> int_timer:
      2 0000111B 60                  <1> 	pushad
      3 0000111C 06                  <1> 	push	es
@@ -2412,7 +2415,7 @@
     81 000011B8 C3                  <1> 	ret
     82                              <1> 
     83                              <1> 
-   171                                  %include	"../modules/protect/draw_rotation_bar.s"
+   172                                  %include	"../modules/protect/draw_rotation_bar.s"
      1                              <1> draw_rotation_bar:
      2 000011B9 55                  <1> 	push	ebp
      3 000011BA 89E5                <1> 	mov	ebp, esp
@@ -2441,7 +2444,7 @@
     25                              <1> ALIGN	4,	db	0
     26 000011F0 00000000            <1> .index:		dd	0
     27 000011F4 7C2F2D5C            <1> .table:		dd	"|/-\"
-   172                                  %include	"descriptor.s"
+   173                                  %include	"descriptor.s"
      1                              <1> ; setting of task0 
      2 000011F8 0000000000000000    <1> LDT:		dq	0x0000_0000_0000_0000
      3 00001200 FFFF0000009ACF00    <1> .cs_task_0:	dq	0x00CF_9A00_0000_FFFF
@@ -2708,7 +2711,7 @@
    264 00001842 00000000            <1> .io:      dd 0
    265 00001846 00<rept>            <1> .fp_save:	times 108 + 4 db 0
    266                              <1> 
-   173                                  %include	"task/task_1.s"
+   174                                  %include	"task/task_1.s"
      1                              <1> task_1:
      2 000018B6 68[E4180000]6A076A- <1> 	cdecl	draw_str, 63, 0, 0x07, .s0
      2 000018BE 006A3FE821ECFFFF66- <1>
@@ -2737,7 +2740,7 @@
     22                              <1> 
     23                              <1> 
     24 000018E4 5461736B2D3100      <1> .s0	db	"Task-1", 0
-   174                                  %include	"task/task_2.s"
+   175                                  %include	"task/task_2.s"
      1                              <1> task_2:
      2 000018EB 68[AE190000]6A076A- <1> 	cdecl	draw_str, 63, 1, 0x07, .s0
      2 000018F3 016A3FE8ECEBFFFF66- <1>
@@ -2801,7 +2804,7 @@
     56 000019B5 2D                  <1> .s1:	db	"-"
     57 000019B6 302E                <1> .s2:	db	"0."
     58 000019B8 30303000            <1> .s3:	db	"000", 0
-   175                                  %include	"task/task_3.s"
+   176                                  %include	"task/task_3.s"
      1                              <1> task_3:
      2                              <1> 	; push	ebp
      3 000019BC 89E5                <1> 	mov	ebp, esp
@@ -3050,71 +3053,71 @@
    239                              <1> 	
    240                              <1> 
    241                              <1> 
-   176                                  ;%include	"../../../../testOS/src/39_rose/tasks/task_3.s"
-   177                                  
-   178                                  ;%include	"../../../../testOS/src/modules/protect/ring_buff.s"
-   179                                  ;%include	"../../../../testOS/src/modules/protect/some.s"
-   180                                  
+   177                                  ;%include	"../../../../testOS/src/39_rose/tasks/task_3.s"
+   178                                  
+   179                                  ;%include	"../../../../testOS/src/modules/protect/ring_buff.s"
+   180                                  ;%include	"../../../../testOS/src/modules/protect/some.s"
    181                                  
    182                                  
-   183 00001C04 00<rept>                	times	KERNEL_SIZE - ($ - $$)	db	0
-   184                                  
-   185                                  %include	"fat.s"
+   183                                  
+   184 00001C04 00<rept>                	times	KERNEL_SIZE - ($ - $$)	db	0
+   185                                  
+   186                                  %include	"fat.s"
      1                              <1> 
      2                              <1> 	times	(FAT1_START) - ($ - $$)	db	0x00
      3                              <1> 
      4                              <1> FAT1:
-     5 00002000 FFFF                <1> 	db	0xFF, 0xFF
-     6 00002002 FFFF                <1> 	dw	0xFFFF
-     7 00002004 FFFF                <1> 	dw	0xFFFF
+     5 00004000 FFFF                <1> 	db	0xFF, 0xFF
+     6 00004002 FFFF                <1> 	dw	0xFFFF
+     7 00004004 FFFF                <1> 	dw	0xFFFF
      8                              <1> 
-     9 00002006 00<rept>            <1> 	times	(FAT2_START) - ($ - $$)	db	0x00
+     9 00004006 00<rept>            <1> 	times	(FAT2_START) - ($ - $$)	db	0x00
     10                              <1> 
     11                              <1> FAT2:
-    12 00022000 FFFF                <1> 	db	0xFF, 0xFF
-    13 00022002 FFFF                <1> 	dw	0xFFFF
-    14 00022004 FFFF                <1> 	dw	0xFFFF
+    12 00024000 FFFF                <1> 	db	0xFF, 0xFF
+    13 00024002 FFFF                <1> 	dw	0xFFFF
+    14 00024004 FFFF                <1> 	dw	0xFFFF
     15                              <1> 
     16                              <1> 
-    17 00022006 00<rept>            <1> 	times	(ROOT_START) - ($ - $$)	db	0x00
+    17 00024006 00<rept>            <1> 	times	(ROOT_START) - ($ - $$)	db	0x00
     18                              <1> 
     19                              <1> FAT_ROOT:
-    20 00042000 424F4F5441424C4544- <1> 	db	'BOOTABLE', 'DSK'
-    20 00042009 534B                <1>
-    21 0004200B 28                  <1> 	db	ATTR_ARCHIVE | ATTR_VOLUME_ID
-    22 0004200C 00                  <1> 	db	0x00
-    23 0004200D 00                  <1> 	db	0x00
-    24 0004200E 0000                <1> 	dw	( 0 << 11) | (0 << 5) | (0 / 2)	; 1980/1/1
-    25 00042010 0100                <1> 	dw	( 0 <<  9) | (0 << 5) | ( 1)
-    26 00042012 0100                <1> 	dw	( 0 <<  9) | (0 << 5) | ( 1)
-    27 00042014 0000                <1> 	dw	0x0000
-    28 00042016 0000                <1> 	dw	( 0 << 11) | (0 << 5) | (0 / 2)
-    29 00042018 0100                <1> 	dw	( 0 <<  9) | (0 << 5) | ( 1)
-    30 0004201A 0000                <1> 	dw	0
-    31 0004201C 00000000            <1> 	dd	0
+    20 00044000 424F4F5441424C4544- <1> 	db	'BOOTABLE', 'DSK'
+    20 00044009 534B                <1>
+    21 0004400B 28                  <1> 	db	ATTR_ARCHIVE | ATTR_VOLUME_ID
+    22 0004400C 00                  <1> 	db	0x00
+    23 0004400D 00                  <1> 	db	0x00
+    24 0004400E 0000                <1> 	dw	( 0 << 11) | (0 << 5) | (0 / 2)	; 1980/1/1
+    25 00044010 0100                <1> 	dw	( 0 <<  9) | (0 << 5) | ( 1)
+    26 00044012 0100                <1> 	dw	( 0 <<  9) | (0 << 5) | ( 1)
+    27 00044014 0000                <1> 	dw	0x0000
+    28 00044016 0000                <1> 	dw	( 0 << 11) | (0 << 5) | (0 / 2)
+    29 00044018 0100                <1> 	dw	( 0 <<  9) | (0 << 5) | ( 1)
+    30 0004401A 0000                <1> 	dw	0
+    31 0004401C 00000000            <1> 	dd	0
     32                              <1> 
-    33 00042020 5350454349414C2054- <1> 	db	'SPECIAL ', 'TXT'
-    33 00042029 5854                <1>
-    34 0004202B 20                  <1> 	db	ATTR_ARCHIVE
-    35 0004202C 00                  <1> 	db	0x00
-    36 0004202D 00                  <1> 	db	0x00
-    37 0004202E 0000                <1> 	dw	( 0 << 11) | (0 << 5) | (0 / 2)	; 1980/1/1
-    38 00042030 2100                <1> 	dw	( 0 <<  9) | (1 << 5) | ( 1)
-    39 00042032 2100                <1> 	dw	( 0 <<  9) | (1 << 5) | ( 1)
-    40 00042034 0000                <1> 	dw	0x0000
-    41 00042036 0000                <1> 	dw	( 0 << 11) | (0 << 5) | (0 / 2)
-    42 00042038 2100                <1> 	dw	( 0 <<  9) | (1 << 5) | ( 1)
-    43 0004203A 0200                <1> 	dw	2				; 2 is top cluster
-    44 0004203C 0B000000            <1> 	dd	FILE.end - FILE
+    33 00044020 5350454349414C2054- <1> 	db	'SPECIAL ', 'TXT'
+    33 00044029 5854                <1>
+    34 0004402B 20                  <1> 	db	ATTR_ARCHIVE
+    35 0004402C 00                  <1> 	db	0x00
+    36 0004402D 00                  <1> 	db	0x00
+    37 0004402E 0000                <1> 	dw	( 0 << 11) | (0 << 5) | (0 / 2)	; 1980/1/1
+    38 00044030 2100                <1> 	dw	( 0 <<  9) | (1 << 5) | ( 1)
+    39 00044032 2100                <1> 	dw	( 0 <<  9) | (1 << 5) | ( 1)
+    40 00044034 0000                <1> 	dw	0x0000
+    41 00044036 0000                <1> 	dw	( 0 << 11) | (0 << 5) | (0 / 2)
+    42 00044038 2100                <1> 	dw	( 0 <<  9) | (1 << 5) | ( 1)
+    43 0004403A 0200                <1> 	dw	2				; 2 is top cluster
+    44 0004403C 0B000000            <1> 	dd	FILE.end - FILE
     45                              <1> 
-    46 00042040 00<rept>            <1> 	times	FILE_START - ($ - $$)	db	0x00
+    46 00044040 00<rept>            <1> 	times	FILE_START - ($ - $$)	db	0x00
     47                              <1> 
-    48 00046000 48656C6C6F2C204641- <1> FILE:	db	'Hello, FAT!'
-    48 00046009 5421                <1>
-    49 0004600B 00                  <1> .end:	db	0
+    48 00048000 48656C6C6F2C204641- <1> FILE:	db	'Hello, FAT!'
+    48 00048009 5421                <1>
+    49 0004800B 00                  <1> .end:	db	0
     50                              <1> 
-    51 0004600C 00<rept>            <1> ALIGN	512,	db	0x00
+    51 0004800C 00<rept>            <1> ALIGN	512,	db	0x00
     52                              <1> 	
-    53 00046200 00<rept>            <1> 	times	(512 * 63)	db	0x00
+    53 00048200 00<rept>            <1> 	times	(512 * 63)	db	0x00
     54                              <1> 
-   186                                  ;%include	"../../../../testOS/src/45_fat_bios/fat.s"
+   187                                  ;%include	"../../../../testOS/src/45_fat_bios/fat.s"

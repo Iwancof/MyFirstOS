@@ -38,6 +38,7 @@ kernel:
 	set_desc	GDT.tss_4, TSS_4
 	set_desc	GDT.tss_5, TSS_5
 	set_desc	GDT.tss_6, TSS_6
+	set_desc	GDT.tss_t, TSS_T
 	lgdt		[GDTR]
 
 	mov	esp, SP_TASK_0
@@ -58,15 +59,15 @@ kernel:
 	set_vect	0x81, trap_gate_81, word 0xEF00	; type = trap
 	set_vect	0x82, trap_gate_82, word 0xEF00
 
-	cdecl	init_page
+	; cdecl	init_page
 
-	mov	eax, CR3_BASE
-	mov	cr3, eax
+	; mov	eax, CR3_BASE
+	; mov	cr3, eax
 	
-	mov	eax, cr0
-	or	eax, (1 << 31)
-	mov	cr0, eax
-	jmp	$ + 2
+	; mov	eax, cr0
+	; or	eax, (1 << 31)
+	; mov	cr0, eax
+	; jmp	$ + 2
 
 	;mov	eax, 0xffff00
 	;mov	[eax], dword 1
@@ -89,9 +90,7 @@ kernel:
         cdecl	draw_str, 25, 14, 0x010F, .s0
 	
 	;jmp	SS_TASK_1:10000
-
-
-
+	
 .10L:
 
 	cdecl	draw_rotation_bar
@@ -112,6 +111,7 @@ kernel:
 	cdecl	draw_str, 0, 0, 0x0F04, esi
 
 .14L:
+	
 	mov	al, [.int_key]
 	cdecl	ctrl_alt_end, eax
 	cmp	eax, 0
@@ -124,12 +124,15 @@ kernel:
 
 	jmp	.10L
 	
-	
 .s0:	db	" Hello, kernel! ", 0
 .t0:	db	"----",0
 .t1:	db	"----------------",0
 .int_key:	dd	0
 .once:		dd	0
+
+DRAW_ROSE:	db	0	; false
+PLAY_TETR:	db	1	
+
 
 ALIGN	4,	db	0
 FONT_ADR:	dd	0
@@ -164,6 +167,7 @@ RTC_TIME:	dd	0
 %include	"../modules/protect/acpi_find.s"
 %include	"../modules/protect/find_rsdt_entry.s"
 %include	"../modules/protect/acpi_package_value.s"
+%include	"../modules/protect/draw_num.s"
 ;%include	"../modules/protect/int_pf.s"
 %include	"modules/paging.s"
 %include	"modules/int_pf.s"
@@ -174,6 +178,7 @@ RTC_TIME:	dd	0
 %include	"task/task_1.s"
 %include	"task/task_2.s"
 %include	"task/task_3.s"
+%include	"task/tetris.s"
 ;%include	"../../../../testOS/src/39_rose/tasks/task_3.s"
 
 ;%include	"../../../../testOS/src/modules/protect/ring_buff.s"
