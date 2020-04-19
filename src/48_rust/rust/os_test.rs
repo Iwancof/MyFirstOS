@@ -9,13 +9,14 @@
 #![feature(const_raw_ptr_deref)]
 #![allow(non_upper_case_globals)]
 #![feature(panic_info_message)]
+#![feature(fmt_internals)]
 
 #[macro_use]
 mod rmacro;
 
 use core::panic::PanicInfo;
 use core::mem::size_of;
-use core::fmt::{Write, self};
+use core::fmt::{self,Write,write,Error};
 //use core::iter::IntoIterator::into_iter;
 
 const BASE : u32 = 0x102F00;
@@ -67,11 +68,11 @@ union StringToPointer<'a> {
     pointer : *mut u8,
 }
 
+macro_rules! print {
+    ($($arg:tt)*) => (write!(MyTerminal1,"{}",format_args!($($arg)*)));
+}
+
 pub fn rust_entry() -> () {
-    panic!("Unknown panic!");
-
-
-
     if ring_rd(unsafe { KeyBuff },unsafe {&mut Key }) != 0 {
         let mut inp_key = unsafe {Key};
         // key pressed
@@ -82,9 +83,26 @@ pub fn rust_entry() -> () {
         } else {
             unsafe {
                 if !MyTerminal1.input_key(inp_key) {
-                    //panic!();
+                    print!("Hello from {}", "print macro!!!");
                 }
             }
+        }
+    }
+}
+
+
+
+impl Write for Terminal {
+    fn write_str(&mut self, s : &str) -> Result<(),core::fmt::Error> {
+        let chars = s.as_bytes();
+        for i in 0..s.len() {
+            draw_char(self.x + self.x_offset + 1, self.y, self.color, chars[i]);
+            self.x += 1;
+        };
+        if X_MAX < self.x {
+            Err(core::fmt::Error)
+        } else {
+            Ok(())
         }
     }
 }
@@ -105,12 +123,11 @@ impl Terminal {
         if get.is_char {                // control or char
             return self.input_char(access_key_by_u8(d).ch);
         };
-        //get.control_func(&mut self);
         (get.control_func)(self)        // execute this key's function
     }
     fn input_char(&mut self, c : char) -> bool {
         self.form[self.x] = c;
-        self.draw_char_interm(c);
+        write!(self,"{}",c);
         true
     }
     fn terminal_enter(&mut self) -> bool {
@@ -120,13 +137,13 @@ impl Terminal {
             CommandResult::NotFound(len) => { 
                 self.new_line();
                 for i in 0..len {
-                    self.draw_char_interm(self.form[i]);
+                    write!(self,"{}",self.form[i].clone());
                 }
-                self.draw_str_interm(" : Command not found\0");
+                write!(self," : Command not found.");
             },
             CommandResult::Unknown => {
                 self.new_line();
-                self.draw_str_interm("Unknown error eccured.\0");
+                write!(self,"Unknown error eccured.");
                 panic!();
             },
         }
@@ -156,11 +173,11 @@ impl Terminal {
         }
         if cmp_func("help") {
             self.new_line();
-            self.draw_str_interm("Command      | usage        | description\0");
+            write!(self,"Command      | usage        | description");
             self.new_line();
-            self.draw_str_interm("help         | help         | show help\0");
+            write!(self,"help         | help         | show help");
             self.new_line();
-            self.draw_str_interm("shutdown     | shutdown     | power off this machine\0");
+            write!(self,"shutdown     | shutdown     | power off this machine");
             return CommandResult::Success(1);
         }
         if cmp_func("clear") {
@@ -187,7 +204,7 @@ impl Terminal {
             return false;
         }
         self.x -= 1;
-        self.draw_char_interm(' ');
+        write!(self,"{}",' ');
         self.x -= 1;
         true
     }
@@ -217,20 +234,8 @@ impl Terminal {
         self.new_line();
         draw_char(self.x + self.x_offset + 0,self.y,self.color,'>' as u8);
     }
-    fn draw_char_interm(&mut self,ch  : char) {
-        // self.x is x pos. x_offset is offset, 1 is space of '>'
-        draw_char(self.x + self.x_offset + 1,self.y, self.color, ch as u8);
-        self.x += 1;
-        if X_MAX < self.x {
-            panic!();                           // TODO fix
-        }
-    }
-    fn draw_str_interm(&mut self,string : &str) {
-        draw_str(self.x + self.x_offset + 1,self.y, self.color, string);
-        self.x += string.len();
-        if X_MAX < self.x {
-            panic!();
-        }
+    fn escape(&mut self) -> bool {
+        false
     }
 }
 
@@ -298,6 +303,11 @@ unsafe fn init_keys() {
         }
         counter += 1;
     }
+
+    //Escape
+    Keys[0x01].is_char = false;
+    Keys[0x01].control_func = Terminal::escape;
+
     // back space
     Keys[0x0E].is_char = false;
     Keys[0x0E].control_func = Terminal::back_space;
