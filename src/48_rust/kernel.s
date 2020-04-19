@@ -58,6 +58,7 @@ kernel:
 	set_vect	0x28, int_rtc
 	set_vect	0x81, trap_gate_81, word 0xEF00	; type = trap
 	set_vect	0x82, trap_gate_82, word 0xEF00
+	set_vect	0xFF, panic
 
 	cdecl	init_page
 
@@ -80,7 +81,7 @@ kernel:
 	cdecl	int_en_timer
 	
 	outp	0x21, 0b1111_1000	; slave
-	outp	0xA1, 0b1111_1111	; rtc
+	outp	0xA1, 0b1111_1110	; rtc
 	
 	sti
 	
@@ -91,21 +92,25 @@ kernel:
 	
 	;jmp	SS_TASK_1:10000
 
+	mov	ax, word [RUST_LOAD + 0x18]
+	add	ax, word [RUST_LOAD + 0x38]
 
+	cdecl	eax	; initialize function. eax = main_entry_point
+	mov	[RUST_ENTRY], eax
 
-	; mov	eax, 0x4321
-	;cdecl	BOOT_SIZE + KERNEL_SIZE + 0x1000
-	cdecl	RUST_LOAD + 0x1003
-	; mov	eax, BOOT_SIZE + KERNEL_SIZE + 0x1000
-	; cdecl	draw_num, func, 0, 0
+.90L:
+	cdecl	[RUST_ENTRY]
+	;push	eax
+	;pop	eax
+	;cdecl	draw_num, eax, 0, 1
 
-	; call	0x104F00
-	; cdecl	draw_num, BOOT_SIZE + KERNEL_SIZE , 0, 0
-	cdecl	draw_num, eax, 0, 0
-	; db	0x12, 0x34, 0x56, 0x78
-	
-	; cdecl	0x1000, 0x1234, 0, 2
-	jmp	$
+	; jmp	.90L
+
+	; cdecl	draw_num, _KEY_BUFF, 0, 0
+
+	jmp	.90L
+
+	; jmp	$
 
 .10L:
 
@@ -150,7 +155,7 @@ ALIGN	4,	db	0
 FONT_ADR:	dd	0
 RTC_TIME:	dd	0
 
-
+RUST_ENTRY:	dd	0
 
 ope_exce:
 	cdecl	draw_num, 0x1234, 0, 2
@@ -186,6 +191,7 @@ ope_exce:
 %include	"../modules/protect/find_rsdt_entry.s"
 %include	"../modules/protect/acpi_package_value.s"
 %include	"../modules/protect/draw_num.s"
+%include	"../modules/protect/panic_handler.s"
 ;%include	"../modules/protect/int_pf.s"
 %include	"modules/paging.s"
 %include	"modules/int_pf.s"
@@ -218,10 +224,18 @@ debug:
 
 	times	KERNEL_SIZE - ($ - $$) - 0x100	db	1
 
-func:	dd	draw_num
+funcs:	dd	draw_num
 	dd	test_func
 	; dd	draw_str
 	dd	draw_str
+	dd	wait_tick
+	dd	draw_pixel
+	dd	RING_ITEM_SIZE
+	dd	_KEY_BUFF
+	dd	panic_handler
+	dd	ring_rd
+	dd	draw_char
+	dd	power_off
 
 
 
