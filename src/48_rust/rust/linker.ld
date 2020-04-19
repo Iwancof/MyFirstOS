@@ -35,7 +35,8 @@ SECTIONS{
 
 
 	/*.textセクションのメモリ開始位置*/
-	.text 0x1000 : AT(0x1000) SUBALIGN(1)
+	.text 0x200000 + 0x1000: 
+	AT(0x1000) SUBALIGN(1)
 	{
 		*(.text*)
 		/*.textセクション全部を含む*/
@@ -43,7 +44,7 @@ SECTIONS{
 	}
 
 	/*.dataセクションのメモリ開始位置*/
-	.data LOADADDR(.text) + SIZEOF(.text):
+	.data 0x200000 + LOADADDR(.text) + SIZEOF(.text):
 	/*.data :*/
 
 	/*.dataセクションのファイル上の開始位置*/
@@ -54,7 +55,7 @@ SECTIONS{
 	}
 
 	/*.bssセクションのメモリ開始位置(.dataセクションの終端から)*/
-	.bss :
+	.bss 0x200000 + LOADADDR(.data) + SIZEOF(.data) :
 
 	/*.bssセクションのファイル上の開始位置*/
 	AT(LOADADDR(.data) + SIZEOF(.data)) SUBALIGN(4)

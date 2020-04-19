@@ -251,16 +251,16 @@ stage_5:
 	cdecl	puts, .e0
 	call	reboot
 .10E:
-	cdecl	itoa, RUST_SECT, .t1, 8, 16, 0b0100
-	cdecl	puts, .t2
+	;cdecl	itoa, RUST_SECT, .t1, 8, 16, 0b0100
+	;cdecl	puts, .t2
 
-	cdecl	read_lba, BOOT, BOOT_SECT + KERNEL_SECT, RUST_SECT, RUST_LOAD	; KERNEL_SIZE is end of kernel
-	cdecl	itoa, ax, .t0, 8, 16, 0b0100
-	cdecl	puts, .t0
-	cmp	ax, RUST_SECT	; 17 sectors
-	jz	.11E
-	cdecl	puts, .e1
-	call	reboot
+	;cdecl	read_lba, BOOT, BOOT_SECT + KERNEL_SECT, RUST_SECT, RUST_LOAD	; KERNEL_SIZE is end of kernel
+	;cdecl	itoa, ax, .t0, 8, 16, 0b0100
+	;cdecl	puts, .t0
+	;cmp	ax, RUST_SECT	; 17 sectors
+	;jz	.11E
+	;cdecl	puts, .e1
+	;call	reboot
 
 .11E:
 	jmp	stage_6
@@ -525,10 +525,128 @@ fat_find_file:
 
 .s0:	db	'SPECIAL TXT', 0
 
+[BITS 32]
+LOAD_SECTOR:	dd	0
 
+LOAD_PARTOF_RUST:
+	push	ebp
+	mov	ebp, esp
+	pusha
+
+	cli
+	mov	eax, cr0
+	mov	[.cr0_saved], eax
+	mov	[.esp_saved], esp
+	sidt	[.idtr_save]
+	lidt	[.idtr_real]
+	
+	jmp	0x0018:.bit16	; 16 bit segment selector(D/B bit)
+[BITS 16]
+.bit16:
+	mov	ax, 0x0020
+	mov	ds, ax
+	mov	es, ax
+	mov	ss, ax
+
+	mov	eax, cr0
+	and	eax, 0x7FFF_FFFE	; disable PG,PE
+	mov	cr0, eax	; real mode
+	jmp	$ + 2
+
+	jmp	0:.real
+.real:
+	mov	ax, 0x0000
+	mov	ds, ax
+	mov	es, ax
+	mov	ss, ax
+	mov	sp, 0x7C00
+
+	outp	0x20, 0x11
+	outp	0x21, 0x08
+	outp	0x21, 0x04
+	outp	0x21, 0x01
+	
+	outp	0xA0, 0x11
+	outp	0xA1, 0x10
+	outp	0xA1, 0x02
+	outp	0xA1, 0x01
+
+	outp	0x21, 0b1011_1000	; FDD, Slave, KBC, Timer
+	outp	0xA1, 0b1011_1111	; HDD
+
+	sti
+	cdecl	load_rust_at
+	cli
+
+	outp	0x20, 0x11
+	outp	0x21, 0x20
+	outp	0x21, 0x04
+	outp	0x21, 0x01
+
+	outp	0xA0, 0x11
+	outp	0xA1, 0x28
+	outp	0xA1, 0x02
+	outp	0xA1, 0x01
+
+	outp	0x21, 0b1111_1000
+	outp	0xA1, 0b1111_1110
+
+	mov	eax, cr0
+	or	eax, 1		; 16bit protect mode
+	mov	cr0, eax
+
+	jmp	$ + 2
+
+	db	0x66
+[BITS 32]
+	jmp	0x0008:.bit32
+.bit32:
+	mov	ax, 0x0010
+	mov	ds, ax
+	mov	es, ax
+	mov	ss, ax
+
+	mov	esp, [.esp_saved]
+	mov	eax, [.cr0_saved]
+	mov	cr0, eax
+	
+	jmp	$ + 2
+
+	lidt	[.idtr_save]
+
+	sti
+	popa
+	mov	esp, ebp
+	pop	ebp
+	
+	ret
+.idtr_real:
+	dw	0x3FF
+	dd	0
+
+.idtr_save:
+	dw	0
+	dd	0
+
+.cr0_saved:
+	dd	0
+
+.esp_saved:
+	dd	0
+[BITS 16]
+load_rust_at:
+	; ret
+	push	ax
+	mov	ax, BOOT_SECT + KERNEL_SECT
+	add	ax, word [LOAD_SECTOR]
+	cdecl	read_lba, BOOT, ax , 40, RUST_LOAD	; KERNEL_SIZE is end of kernel
+	pop	ax
+	ret
 
 	times	BOOT_SIZE - ($ - $$) - 16	db	0
 
 	dd	TO_REAL_MODE
+	dd	LOAD_PARTOF_RUST
+	dd	LOAD_SECTOR
 	
 	times	BOOT_SIZE - ($ - $$)	db	0

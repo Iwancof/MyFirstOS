@@ -91,11 +91,43 @@ kernel:
         cdecl	draw_str, 25, 14, 0x010F, .s0
 	
 	;jmp	SS_TASK_1:10000
+	pusha
 
-	mov	ax, word [RUST_LOAD + 0x18]
-	add	ax, word [RUST_LOAD + 0x38]
+	mov	eax, 0		; eax is sector
+	mov	ecx, 0
+.80L:	
+	mov	ebx, [BOOT_LOAD + BOOT_SIZE - 16 + 8]
+	mov	[ebx], eax
 
-	cdecl	eax	; initialize function. eax = main_entry_point
+	call	[BOOT_LOAD + BOOT_SIZE - 16 + 4]
+	lea	edi, [ecx * 4 + ecx]
+	shl	edi, 12
+	add	edi, RUST_MAIN
+	
+	; cdecl	draw_num, edi, 0, ecx
+
+	cdecl	memcpy, edi , 0x1000, 40 * 512
+
+	inc	ecx
+	;cdecl	draw_num, ecx, 0, 0
+
+	add	eax, 40
+	cmp	eax, RUST_SECT
+
+	jna	.80L
+	
+	popa
+
+	mov	eax, dword [RUST_MAIN + 0x18]
+	;mov	eax, dword [RUST_MAIN + 0x18]
+	;add	eax, dword [RUST_MAIN + 0x38]
+
+	; cdecl	draw_num, eax, 0, 0
+	; jmp	$
+
+	; cdecl	eax	; initialize function. eax = main_entry_point
+	;call	0x2010c5
+	call	eax
 	mov	[RUST_ENTRY], eax
 
 .90L:
@@ -111,6 +143,7 @@ kernel:
 	jmp	.90L
 
 	; jmp	$
+
 
 .10L:
 
@@ -222,6 +255,8 @@ debug:
 	ret
 .t0:	db	"test"
 
+panic_message:	times	0xff	db	0
+
 	times	KERNEL_SIZE - ($ - $$) - 0x100	db	1
 
 funcs:	dd	draw_num
@@ -236,10 +271,7 @@ funcs:	dd	draw_num
 	dd	ring_rd
 	dd	draw_char
 	dd	power_off
-
-
-
-
+	dd	panic_message
 
 	times	KERNEL_SIZE - ($ - $$)	db	1
 

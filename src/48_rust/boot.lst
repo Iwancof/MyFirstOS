@@ -23,90 +23,91 @@
      3                              <1> STACK_BASE		equ	0x0010_3000
      4                              <1> CR3_BASE		equ	0x0010_5000
      5                              <1> RUST_LOAD		equ	0x0000_1000
-     6                              <1> RUST_SIZE		equ	0x0000_6000
-     7                              <1> RUST_SECT		equ	RUST_SIZE / SECT_SIZE
-     8                              <1> RUST_END		equ	RUST_LOAD + RUST_SIZE
-     9                              <1> 
-    10                              <1> BOOT_LOAD		equ	0x7c00
-    11                              <1> BOOT_END		equ	BOOT_LOAD + BOOT_SIZE
-    12                              <1> 
-    13                              <1> BOOT_SIZE		equ	(1024 * 8)
-    14                              <1> SECT_SIZE		equ	(512)
-    15                              <1> BOOT_SECT		equ	(BOOT_SIZE / SECT_SIZE)
-    16                              <1> 
-    17                              <1> E820_RECORD_SIZE	equ	20
-    18                              <1> 
-    19                              <1> KERNEL_SIZE		equ	(1024 * 8)
-    20                              <1> KERNEL_SECT		equ	(KERNEL_SIZE / SECT_SIZE)
-    21                              <1> KERNEL_END		equ	KERNEL_LOAD + KERNEL_SIZE
-    22                              <1> ; KERNEL_END : 0x0010_3000
-    23                              <1> 
+     6                              <1> RUST_MAIN		equ	0x0020_0000
+     7                              <1> RUST_SIZE		equ	0x0001_0000
+     8                              <1> RUST_SECT		equ	RUST_SIZE / SECT_SIZE
+     9                              <1> RUST_END		equ	RUST_LOAD + RUST_SIZE
+    10                              <1> 
+    11                              <1> BOOT_LOAD		equ	0x7c00
+    12                              <1> BOOT_END		equ	BOOT_LOAD + BOOT_SIZE
+    13                              <1> 
+    14                              <1> BOOT_SIZE		equ	(1024 * 8)
+    15                              <1> SECT_SIZE		equ	(512)
+    16                              <1> BOOT_SECT		equ	(BOOT_SIZE / SECT_SIZE)
+    17                              <1> 
+    18                              <1> E820_RECORD_SIZE	equ	20
+    19                              <1> 
+    20                              <1> KERNEL_SIZE		equ	(1024 * 8)
+    21                              <1> KERNEL_SECT		equ	(KERNEL_SIZE / SECT_SIZE)
+    22                              <1> KERNEL_END		equ	KERNEL_LOAD + KERNEL_SIZE
+    23                              <1> ; KERNEL_END : 0x0010_3000
     24                              <1> 
-    25                              <1> %define			RING_ITEM_SIZE	(1 << 4)
-    26                              <1> %define			RING_INDEX_MASK	(RING_ITEM_SIZE - 1)
-    27                              <1> 
-    28                              <1> struc			ring_buff		; for keyboard
-    29 00000000 <res 00000004>      <1> 				.rp	resd	1
-    30 00000004 <res 00000004>      <1> 				.wp	resd	1
-    31 00000008 <res 00000010>      <1> 				.item	resb	RING_ITEM_SIZE
-    32                              <1> endstruc
-    33                              <1> 
-    34                              <1> struc			rose
-    35 00000000 <res 00000004>      <1> 				.x0		resd	1
-    36 00000004 <res 00000004>      <1> 				.y0		resd	1
-    37 00000008 <res 00000004>      <1> 				.x1		resd	1
-    38 0000000C <res 00000004>      <1> 				.y1		resd	1
-    39                              <1> 
-    40 00000010 <res 00000004>      <1> 				.n		resd	1
-    41 00000014 <res 00000004>      <1> 				.d		resd	1
-    42                              <1> 
-    43 00000018 <res 00000004>      <1> 				.color_x	resd	1
-    44 0000001C <res 00000004>      <1> 				.color_y	resd	1
-    45 00000020 <res 00000004>      <1> 				.color_z	resd	1
-    46 00000024 <res 00000004>      <1> 				.color_s	resd	1
-    47 00000028 <res 00000004>      <1> 				.color_f	resd	1
-    48 0000002C <res 00000004>      <1> 				.color_b	resd	1
-    49                              <1> 				
-    50 00000030 <res 00000010>      <1> 				.title		resb	16
-    51                              <1> endstruc
-    52                              <1> 
-    53                              <1> ;struc ring_buff
-    54                              <1> ;    .rp resd 1                  ; RP:書き込み位置
-    55                              <1> ;    .wp resd 1                  ; WP:読み込み位置
-    56                              <1> ;    .item resb RING_ITEM_SIZE   ; バッファ
-    57                              <1> ;endstruc
-    58                              <1> 
-    59                              <1> STACK_SIZE		equ	1024
-    60                              <1> 
-    61                              <1> SP_TASK_0		equ	STACK_BASE + (STACK_SIZE * 1)
-    62                              <1> SP_TASK_1		equ	STACK_BASE + (STACK_SIZE * 2)
-    63                              <1> SP_TASK_2		equ	STACK_BASE + (STACK_SIZE * 3)
-    64                              <1> SP_TASK_3		equ	STACK_BASE + (STACK_SIZE * 4)
-    65                              <1> SP_TASK_4		equ	STACK_BASE + (STACK_SIZE * 5)
-    66                              <1> SP_TASK_5		equ	STACK_BASE + (STACK_SIZE * 6)
-    67                              <1> SP_TASK_6		equ	STACK_BASE + (STACK_SIZE * 7)
-    68                              <1> SP_TASK_T		equ	STACK_BASE + (STACK_SIZE * 8)
-    69                              <1> 
-    70                              <1> PARAM_TASK_4		equ	0x0010_8000
-    71                              <1> PARAM_TASK_5		equ	0x0010_9000
-    72                              <1> PARAM_TASK_6		equ	0x0010_A000
-    73                              <1> 
-    74                              <1> CR3_TASK_4		equ	0x0020_0000
-    75                              <1> CR3_TASK_5		equ	0x0020_2000
-    76                              <1> CR3_TASK_6		equ	0x0020_4000
-    77                              <1> CR3_TASK_T		equ	0x0020_6000
-    78                              <1> 
-    79                              <1> FAT_SIZE equ (1024 * 128)
-    80                              <1> ROOT_SIZE equ (1024 * 16)
-    81                              <1> 
-    82                              <1> FAT1_START equ (KERNEL_SIZE)
-    83                              <1> FAT2_START equ (FAT1_START + FAT_SIZE)
-    84                              <1> ROOT_START equ (FAT2_START + FAT_SIZE)
-    85                              <1> FILE_START equ (ROOT_START + ROOT_SIZE)
-    86                              <1> 
-    87                              <1> ATTR_VOLUME_ID equ 0x08
-    88                              <1> ATTR_ARCHIVE equ 0x20
-    89                              <1> 
+    25                              <1> 
+    26                              <1> %define			RING_ITEM_SIZE	(1 << 4)
+    27                              <1> %define			RING_INDEX_MASK	(RING_ITEM_SIZE - 1)
+    28                              <1> 
+    29                              <1> struc			ring_buff		; for keyboard
+    30 00000000 <res 00000004>      <1> 				.rp	resd	1
+    31 00000004 <res 00000004>      <1> 				.wp	resd	1
+    32 00000008 <res 00000010>      <1> 				.item	resb	RING_ITEM_SIZE
+    33                              <1> endstruc
+    34                              <1> 
+    35                              <1> struc			rose
+    36 00000000 <res 00000004>      <1> 				.x0		resd	1
+    37 00000004 <res 00000004>      <1> 				.y0		resd	1
+    38 00000008 <res 00000004>      <1> 				.x1		resd	1
+    39 0000000C <res 00000004>      <1> 				.y1		resd	1
+    40                              <1> 
+    41 00000010 <res 00000004>      <1> 				.n		resd	1
+    42 00000014 <res 00000004>      <1> 				.d		resd	1
+    43                              <1> 
+    44 00000018 <res 00000004>      <1> 				.color_x	resd	1
+    45 0000001C <res 00000004>      <1> 				.color_y	resd	1
+    46 00000020 <res 00000004>      <1> 				.color_z	resd	1
+    47 00000024 <res 00000004>      <1> 				.color_s	resd	1
+    48 00000028 <res 00000004>      <1> 				.color_f	resd	1
+    49 0000002C <res 00000004>      <1> 				.color_b	resd	1
+    50                              <1> 				
+    51 00000030 <res 00000010>      <1> 				.title		resb	16
+    52                              <1> endstruc
+    53                              <1> 
+    54                              <1> ;struc ring_buff
+    55                              <1> ;    .rp resd 1                  ; RP:書き込み位置
+    56                              <1> ;    .wp resd 1                  ; WP:読み込み位置
+    57                              <1> ;    .item resb RING_ITEM_SIZE   ; バッファ
+    58                              <1> ;endstruc
+    59                              <1> 
+    60                              <1> STACK_SIZE		equ	1024
+    61                              <1> 
+    62                              <1> SP_TASK_0		equ	STACK_BASE + (STACK_SIZE * 1)
+    63                              <1> SP_TASK_1		equ	STACK_BASE + (STACK_SIZE * 2)
+    64                              <1> SP_TASK_2		equ	STACK_BASE + (STACK_SIZE * 3)
+    65                              <1> SP_TASK_3		equ	STACK_BASE + (STACK_SIZE * 4)
+    66                              <1> SP_TASK_4		equ	STACK_BASE + (STACK_SIZE * 5)
+    67                              <1> SP_TASK_5		equ	STACK_BASE + (STACK_SIZE * 6)
+    68                              <1> SP_TASK_6		equ	STACK_BASE + (STACK_SIZE * 7)
+    69                              <1> SP_TASK_T		equ	STACK_BASE + (STACK_SIZE * 8)
+    70                              <1> 
+    71                              <1> PARAM_TASK_4		equ	0x0010_8000
+    72                              <1> PARAM_TASK_5		equ	0x0010_9000
+    73                              <1> PARAM_TASK_6		equ	0x0010_A000
+    74                              <1> 
+    75                              <1> CR3_TASK_4		equ	0x0020_0000
+    76                              <1> CR3_TASK_5		equ	0x0020_2000
+    77                              <1> CR3_TASK_6		equ	0x0020_4000
+    78                              <1> CR3_TASK_T		equ	0x0020_6000
+    79                              <1> 
+    80                              <1> FAT_SIZE equ (1024 * 128)
+    81                              <1> ROOT_SIZE equ (1024 * 16)
+    82                              <1> 
+    83                              <1> FAT1_START equ (KERNEL_SIZE)
+    84                              <1> FAT2_START equ (FAT1_START + FAT_SIZE)
+    85                              <1> ROOT_START equ (FAT2_START + FAT_SIZE)
+    86                              <1> FILE_START equ (ROOT_START + ROOT_SIZE)
+    87                              <1> 
+    88                              <1> ATTR_VOLUME_ID equ 0x08
+    89                              <1> ATTR_ARCHIVE equ 0x20
+    90                              <1> 
      4                                  %include "../include/outp.s"
      1                              <1> %macro	outp	2
      2                              <1> 	mov	al, %2
@@ -1104,360 +1105,511 @@
    243 00000974 0000                    .key:	dw	00
    244                                  
    245                                  stage_5:
-   246 00000976 68[F609]E824F783C4-     	cdecl	puts, .s0
+   246 00000976 68[A209]E824F783C4-     	cdecl	puts, .s0
    246 0000097E 02                 
    247                                  
    248 0000097F 68009C6A106A1068-       	cdecl	read_lba, BOOT, BOOT_SECT, KERNEL_SECT,BOOT_END	; read kernel and put end of BOOT
    248 00000987 [9800]E8C0FC83C408 
    249 0000098F 83F810                  	cmp	ax, KERNEL_SECT
    250 00000992 740C                    	jz	.10E		; Seccess
-   251 00000994 68[050A]E806F783C4-     	cdecl	puts, .e0
+   251 00000994 68[B109]E806F783C4-     	cdecl	puts, .e0
    251 0000099C 02                 
    252 0000099D E81FF7                  	call	reboot
    253                                  .10E:
-   254 000009A0 6A046A106A0868-         	cdecl	itoa, RUST_SECT, .t1, 8, 16, 0b0100
-   254 000009A7 [420A]6A30E85EF883-
-   254 000009AF C40A               
-   255 000009B1 68[400A]E8E9F683C4-     	cdecl	puts, .t2
-   255 000009B9 02                 
+   254                                  	;cdecl	itoa, RUST_SECT, .t1, 8, 16, 0b0100
+   255                                  	;cdecl	puts, .t2
    256                                  
-   257 000009BA 6800106A306A2068-       	cdecl	read_lba, BOOT, BOOT_SECT + KERNEL_SECT, RUST_SECT, RUST_LOAD	; KERNEL_SIZE is end of kernel
-   257 000009C2 [9800]E885FC83C408 
-   258 000009CA 6A046A106A0868-         	cdecl	itoa, ax, .t0, 8, 16, 0b0100
-   258 000009D1 [370A]50E835F883C4-
-   258 000009D9 0A                 
-   259 000009DA 68[370A]E8C0F683C4-     	cdecl	puts, .t0
-   259 000009E2 02                 
-   260 000009E3 83F830                  	cmp	ax, RUST_SECT	; 17 sectors
-   261 000009E6 740C                    	jz	.11E
-   262 000009E8 68[1F0A]E8B2F683C4-     	cdecl	puts, .e1
-   262 000009F0 02                 
-   263 000009F1 E8CBF6                  	call	reboot
+   257                                  	;cdecl	read_lba, BOOT, BOOT_SECT + KERNEL_SECT, RUST_SECT, RUST_LOAD	; KERNEL_SIZE is end of kernel
+   258                                  	;cdecl	itoa, ax, .t0, 8, 16, 0b0100
+   259                                  	;cdecl	puts, .t0
+   260                                  	;cmp	ax, RUST_SECT	; 17 sectors
+   261                                  	;jz	.11E
+   262                                  	;cdecl	puts, .e1
+   263                                  	;call	reboot
    264                                  
    265                                  .11E:
-   266 000009F4 EB55                    	jmp	stage_6
+   266 000009A0 EB55                    	jmp	stage_6
    267                                  
-   268 000009F6 357468207374616765-     .s0:	db	"5th stage...",0x0A,0x0D,0
-   268 000009FF 2E2E2E0A0D00       
-   269 00000A05 204661696C75726520-     .e0:	db	" Failure load kernel...",0x0A,0x0D,0
-   269 00000A0E 6C6F6164206B65726E-
-   269 00000A17 656C2E2E2E0A0D00   
-   270 00000A1F 204661696C75726520-     .e1:	db	" Failure load rust...",0x0A,0x0D,0
-   270 00000A28 6C6F61642072757374-
-   270 00000A31 2E2E2E0A0D00       
-   271 00000A37 2D2D2D2D2D2D2D2D00      .t0:	db	"--------", 0
-   272 00000A40 3078                    .t2:	db	"0x"
-   273 00000A42 2D2D2D2D2D2D2D2D00      .t1:	db	"--------", 0
+   268 000009A2 357468207374616765-     .s0:	db	"5th stage...",0x0A,0x0D,0
+   268 000009AB 2E2E2E0A0D00       
+   269 000009B1 204661696C75726520-     .e0:	db	" Failure load kernel...",0x0A,0x0D,0
+   269 000009BA 6C6F6164206B65726E-
+   269 000009C3 656C2E2E2E0A0D00   
+   270 000009CB 204661696C75726520-     .e1:	db	" Failure load rust...",0x0A,0x0D,0
+   270 000009D4 6C6F61642072757374-
+   270 000009DD 2E2E2E0A0D00       
+   271 000009E3 2D2D2D2D2D2D2D2D00      .t0:	db	"--------", 0
+   272 000009EC 3078                    .t2:	db	"0x"
+   273 000009EE 2D2D2D2D2D2D2D2D00      .t1:	db	"--------", 0
    274                                  
    275                                  stage_6:
-   276 00000A4B 68[630A]E84FF683C4-     	cdecl	puts, .s0
-   276 00000A53 02                 
+   276 000009F7 68[0F0A]E8A3F683C4-     	cdecl	puts, .s0
+   276 000009FF 02                 
    277                                  
    278                                  .10L:
-   279 00000A54 B400                    	mov	ah, 0
-   280 00000A56 CD16                    	int	0x16
-   281 00000A58 3C20                    	cmp	al, ' '
-   282 00000A5A 75F8                    	jnz	.10L
+   279 00000A00 B400                    	mov	ah, 0
+   280 00000A02 CD16                    	int	0x16
+   281 00000A04 3C20                    	cmp	al, ' '
+   282 00000A06 75F8                    	jnz	.10L
    283                                  
-   284 00000A5C B81200                  	mov	ax,0x0012
-   285 00000A5F CD10                    	int	0x10
+   284 00000A08 B81200                  	mov	ax,0x0012
+   285 00000A0B CD10                    	int	0x10
    286                                  
-   287 00000A61 EB59                    	jmp	stage_7
+   287 00000A0D EB59                    	jmp	stage_7
    288                                  
-   289 00000A63 367468207374616765-     .s0:	db	"6th stage...",0x0A,0x0D,0x0A,0x0D
-   289 00000A6C 2E2E2E0A0D0A0D     
-   290 00000A73 205075736820535041-     	db	" Push SPACE key to protect mode...",0x0A,0x0D,00
-   290 00000A7C 4345206B657920746F-
-   290 00000A85 2070726F7465637420-
-   290 00000A8E 6D6F64652E2E2E0A0D-
-   290 00000A97 00                 
+   289 00000A0F 367468207374616765-     .s0:	db	"6th stage...",0x0A,0x0D,0x0A,0x0D
+   289 00000A18 2E2E2E0A0D0A0D     
+   290 00000A1F 205075736820535041-     	db	" Push SPACE key to protect mode...",0x0A,0x0D,00
+   290 00000A28 4345206B657920746F-
+   290 00000A31 2070726F7465637420-
+   290 00000A3A 6D6F64652E2E2E0A0D-
+   290 00000A43 00                 
    291                                  
    292                                  
    293                                  ALIGN	4,	db	0
-   294 00000A98 0000000000000000        GDT:	dq	0x00_0000_000000_0000	; NULL
-   295 00000AA0 FFFF0000009ACF00        .cs	dq	0x00_CF9A_000000_FFFF	; CODE 4G
-   296 00000AA8 FFFF00000092CF00        .ds	dq	0x00_CF92_000000_FFFF	; DATA 4G
+   294 00000A44 0000000000000000        GDT:	dq	0x00_0000_000000_0000	; NULL
+   295 00000A4C FFFF0000009ACF00        .cs	dq	0x00_CF9A_000000_FFFF	; CODE 4G
+   296 00000A54 FFFF00000092CF00        .ds	dq	0x00_CF92_000000_FFFF	; DATA 4G
    297                                  .gdt_end:
    298                                  
    299                                  SEL_CODE		equ	GDT.cs - GDT
    300                                  SEL_DATA		equ	GDT.ds - GDT
    301                                  
-   302 00000AB0 1700                    GDTR:	dw	GDT.gdt_end - GDT - 1	; (Size 1)'s limit is 0
-   303 00000AB2 [980A0000]              	dd	GDT
+   302 00000A5C 1700                    GDTR:	dw	GDT.gdt_end - GDT - 1	; (Size 1)'s limit is 0
+   303 00000A5E [440A0000]              	dd	GDT
    304                                  
-   305 00000AB6 0000                    IDTR:	dw	0
-   306 00000AB8 00000000                	dd	0
+   305 00000A62 0000                    IDTR:	dw	0
+   306 00000A64 00000000                	dd	0
    307                                  
    308                                  
    309                                  stage_7:
-   310 00000ABC FA                      	cli
-   311 00000ABD 0F0116[B00A]            	lgdt	[GDTR]
-   312 00000AC2 0F011E[B60A]            	lidt	[IDTR]
+   310 00000A68 FA                      	cli
+   311 00000A69 0F0116[5C0A]            	lgdt	[GDTR]
+   312 00000A6E 0F011E[620A]            	lidt	[IDTR]
    313                                  
-   314 00000AC7 0F20C0                  	mov	eax, cr0
-   315 00000ACA 6683C801                	or	eax, 1
-   316 00000ACE 0F22C0                  	mov	cr0, eax
+   314 00000A73 0F20C0                  	mov	eax, cr0
+   315 00000A76 6683C801                	or	eax, 1
+   316 00000A7A 0F22C0                  	mov	cr0, eax
    317                                  
-   318 00000AD1 EB00                    	jmp	$ + 2			; pipe line instruction delete
+   318 00000A7D EB00                    	jmp	$ + 2			; pipe line instruction delete
    319                                  	
    320                                  [BITS 32]
-   321 00000AD3 66                      	db	0x66			; override prefix
-   322 00000AD4 EA[DB0A0000]0800        	jmp	SEL_CODE:CODE_32	; SEL_CODE is ""INDEX""
+   321 00000A7F 66                      	db	0x66			; override prefix
+   322 00000A80 EA[870A0000]0800        	jmp	SEL_CODE:CODE_32	; SEL_CODE is ""INDEX""
    323                                  
    324                                  CODE_32:
-   325 00000ADB 66B81000                	mov	ax,  SEL_DATA
-   326 00000ADF 8ED8                    	mov	ds, ax
-   327 00000AE1 8EC0                    	mov	es, ax
-   328 00000AE3 8EE0                    	mov	fs, ax
-   329 00000AE5 8EE8                    	mov	gs, ax
-   330 00000AE7 8ED0                    	mov	ss, ax
+   325 00000A87 66B81000                	mov	ax,  SEL_DATA
+   326 00000A8B 8ED8                    	mov	ds, ax
+   327 00000A8D 8EC0                    	mov	es, ax
+   328 00000A8F 8EE0                    	mov	fs, ax
+   329 00000A91 8EE8                    	mov	gs, ax
+   330 00000A93 8ED0                    	mov	ss, ax
    331                                  
-   332 00000AE9 B900080000              	mov	ecx, (KERNEL_SIZE) / 4	; "/ 4" byte
-   333 00000AEE BE009C0000              	mov	esi, BOOT_END		; from
-   334 00000AF3 BF00101000              	mov	edi, KERNEL_LOAD	; to
-   335 00000AF8 FC                      	cld
-   336 00000AF9 F3A5                    	rep	movsd
+   332 00000A95 B900080000              	mov	ecx, (KERNEL_SIZE) / 4	; "/ 4" byte
+   333 00000A9A BE009C0000              	mov	esi, BOOT_END		; from
+   334 00000A9F BF00101000              	mov	edi, KERNEL_LOAD	; to
+   335 00000AA4 FC                      	cld
+   336 00000AA5 F3A5                    	rep	movsd
    337                                  
-   338 00000AFB E9(00101000)            	jmp	KERNEL_LOAD
+   338 00000AA7 E9(00101000)            	jmp	KERNEL_LOAD
    339                                  
    340                                  
    341                                  
    342                                  TO_REAL_MODE:
-   343 00000B00 55                      	push	ebp
-   344 00000B01 89E5                    	mov	ebp, esp
+   343 00000AAC 55                      	push	ebp
+   344 00000AAD 89E5                    	mov	ebp, esp
    345                                  
-   346 00000B03 60                      	pusha
+   346 00000AAF 60                      	pusha
    347                                  
    348                                  	; cli
    349                                  
-   350 00000B04 0F20C0                  	mov	eax, cr0
-   351 00000B07 A3[EB0B0000]            	mov	[.cr0_saved], eax
-   352 00000B0C 8925[EF0B0000]          	mov	[.esp_saved], esp
-   353 00000B12 0F010D[E50B0000]        	sidt	[.idtr_save]
-   354 00000B19 0F011D[DF0B0000]        	lidt	[.idtr_real]
+   350 00000AB0 0F20C0                  	mov	eax, cr0
+   351 00000AB3 A3[970B0000]            	mov	[.cr0_saved], eax
+   352 00000AB8 8925[9B0B0000]          	mov	[.esp_saved], esp
+   353 00000ABE 0F010D[910B0000]        	sidt	[.idtr_save]
+   354 00000AC5 0F011D[8B0B0000]        	lidt	[.idtr_real]
    355                                  	
-   356 00000B20 EA[270B0000]1800        	jmp	0x0018:.bit16	; 16 bit segment selector(D/B bit)
+   356 00000ACC EA[D30A0000]1800        	jmp	0x0018:.bit16	; 16 bit segment selector(D/B bit)
    357                                  [BITS 16]
    358                                  .bit16:
-   359 00000B27 B82000                  	mov	ax, 0x0020
-   360 00000B2A 8ED8                    	mov	ds, ax
-   361 00000B2C 8EC0                    	mov	es, ax
-   362 00000B2E 8ED0                    	mov	ss, ax
+   359 00000AD3 B82000                  	mov	ax, 0x0020
+   360 00000AD6 8ED8                    	mov	ds, ax
+   361 00000AD8 8EC0                    	mov	es, ax
+   362 00000ADA 8ED0                    	mov	ss, ax
    363                                  
-   364 00000B30 0F20C0                  	mov	eax, cr0
-   365 00000B33 6625FEFFFF7F            	and	eax, 0x7FFF_FFFE	; disable PG,PE
-   366 00000B39 0F22C0                  	mov	cr0, eax	; real mode
-   367 00000B3C EB00                    	jmp	$ + 2
+   364 00000ADC 0F20C0                  	mov	eax, cr0
+   365 00000ADF 6625FEFFFF7F            	and	eax, 0x7FFF_FFFE	; disable PG,PE
+   366 00000AE5 0F22C0                  	mov	cr0, eax	; real mode
+   367 00000AE8 EB00                    	jmp	$ + 2
    368                                  
-   369 00000B3E EA[430B]0000            	jmp	0:.real
+   369 00000AEA EA[EF0A]0000            	jmp	0:.real
    370                                  .real:
-   371 00000B43 B80000                  	mov	ax, 0x0000
-   372 00000B46 8ED8                    	mov	ds, ax
-   373 00000B48 8EC0                    	mov	es, ax
-   374 00000B4A 8ED0                    	mov	ss, ax
-   375 00000B4C BC007C                  	mov	sp, 0x7C00
+   371 00000AEF B80000                  	mov	ax, 0x0000
+   372 00000AF2 8ED8                    	mov	ds, ax
+   373 00000AF4 8EC0                    	mov	es, ax
+   374 00000AF6 8ED0                    	mov	ss, ax
+   375 00000AF8 BC007C                  	mov	sp, 0x7C00
    376                                  
    377                                  	outp	0x20, 0x11
-   377 00000B4F B011                <1>  mov al, %2
-   377 00000B51 E620                <1>  out %1, al
+   377 00000AFB B011                <1>  mov al, %2
+   377 00000AFD E620                <1>  out %1, al
    378                                  	outp	0x21, 0x08
-   378 00000B53 B008                <1>  mov al, %2
-   378 00000B55 E621                <1>  out %1, al
+   378 00000AFF B008                <1>  mov al, %2
+   378 00000B01 E621                <1>  out %1, al
    379                                  	outp	0x21, 0x04
-   379 00000B57 B004                <1>  mov al, %2
-   379 00000B59 E621                <1>  out %1, al
+   379 00000B03 B004                <1>  mov al, %2
+   379 00000B05 E621                <1>  out %1, al
    380                                  	outp	0x21, 0x01
-   380 00000B5B B001                <1>  mov al, %2
-   380 00000B5D E621                <1>  out %1, al
+   380 00000B07 B001                <1>  mov al, %2
+   380 00000B09 E621                <1>  out %1, al
    381                                  	
    382                                  	outp	0xA0, 0x11
-   382 00000B5F B011                <1>  mov al, %2
-   382 00000B61 E6A0                <1>  out %1, al
+   382 00000B0B B011                <1>  mov al, %2
+   382 00000B0D E6A0                <1>  out %1, al
    383                                  	outp	0xA1, 0x10
-   383 00000B63 B010                <1>  mov al, %2
-   383 00000B65 E6A1                <1>  out %1, al
+   383 00000B0F B010                <1>  mov al, %2
+   383 00000B11 E6A1                <1>  out %1, al
    384                                  	outp	0xA1, 0x02
-   384 00000B67 B002                <1>  mov al, %2
-   384 00000B69 E6A1                <1>  out %1, al
+   384 00000B13 B002                <1>  mov al, %2
+   384 00000B15 E6A1                <1>  out %1, al
    385                                  	outp	0xA1, 0x01
-   385 00000B6B B001                <1>  mov al, %2
-   385 00000B6D E6A1                <1>  out %1, al
+   385 00000B17 B001                <1>  mov al, %2
+   385 00000B19 E6A1                <1>  out %1, al
    386                                  
    387                                  	outp	0x21, 0b1011_1000	; FDD, Slave, KBC, Timer
-   387 00000B6F B0B8                <1>  mov al, %2
-   387 00000B71 E621                <1>  out %1, al
+   387 00000B1B B0B8                <1>  mov al, %2
+   387 00000B1D E621                <1>  out %1, al
    388                                  	outp	0xA1, 0b1011_1111	; HDD
-   388 00000B73 B0BF                <1>  mov al, %2
-   388 00000B75 E6A1                <1>  out %1, al
+   388 00000B1F B0BF                <1>  mov al, %2
+   388 00000B21 E6A1                <1>  out %1, al
    389                                  
-   390 00000B77 FB                      	sti
-   391 00000B78 E87800                  	cdecl	read_file
-   392 00000B7B FA                      	cli
+   390 00000B23 FB                      	sti
+   391 00000B24 E87800                  	cdecl	read_file
+   392 00000B27 FA                      	cli
    393                                  
    394                                  	outp	0x20, 0x11
-   394 00000B7C B011                <1>  mov al, %2
-   394 00000B7E E620                <1>  out %1, al
+   394 00000B28 B011                <1>  mov al, %2
+   394 00000B2A E620                <1>  out %1, al
    395                                  	outp	0x21, 0x20
-   395 00000B80 B020                <1>  mov al, %2
-   395 00000B82 E621                <1>  out %1, al
+   395 00000B2C B020                <1>  mov al, %2
+   395 00000B2E E621                <1>  out %1, al
    396                                  	outp	0x21, 0x04
-   396 00000B84 B004                <1>  mov al, %2
-   396 00000B86 E621                <1>  out %1, al
+   396 00000B30 B004                <1>  mov al, %2
+   396 00000B32 E621                <1>  out %1, al
    397                                  	outp	0x21, 0x01
-   397 00000B88 B001                <1>  mov al, %2
-   397 00000B8A E621                <1>  out %1, al
+   397 00000B34 B001                <1>  mov al, %2
+   397 00000B36 E621                <1>  out %1, al
    398                                  
    399                                  	outp	0xA0, 0x11
-   399 00000B8C B011                <1>  mov al, %2
-   399 00000B8E E6A0                <1>  out %1, al
+   399 00000B38 B011                <1>  mov al, %2
+   399 00000B3A E6A0                <1>  out %1, al
    400                                  	outp	0xA1, 0x28
-   400 00000B90 B028                <1>  mov al, %2
-   400 00000B92 E6A1                <1>  out %1, al
+   400 00000B3C B028                <1>  mov al, %2
+   400 00000B3E E6A1                <1>  out %1, al
    401                                  	outp	0xA1, 0x02
-   401 00000B94 B002                <1>  mov al, %2
-   401 00000B96 E6A1                <1>  out %1, al
+   401 00000B40 B002                <1>  mov al, %2
+   401 00000B42 E6A1                <1>  out %1, al
    402                                  	outp	0xA1, 0x01
-   402 00000B98 B001                <1>  mov al, %2
-   402 00000B9A E6A1                <1>  out %1, al
+   402 00000B44 B001                <1>  mov al, %2
+   402 00000B46 E6A1                <1>  out %1, al
    403                                  
    404                                  	outp	0x21, 0b1111_1000
-   404 00000B9C B0F8                <1>  mov al, %2
-   404 00000B9E E621                <1>  out %1, al
+   404 00000B48 B0F8                <1>  mov al, %2
+   404 00000B4A E621                <1>  out %1, al
    405                                  	outp	0xA1, 0b1111_1110
-   405 00000BA0 B0FE                <1>  mov al, %2
-   405 00000BA2 E6A1                <1>  out %1, al
+   405 00000B4C B0FE                <1>  mov al, %2
+   405 00000B4E E6A1                <1>  out %1, al
    406                                  
-   407 00000BA4 0F20C0                  	mov	eax, cr0
-   408 00000BA7 6683C801                	or	eax, 1		; 16bit protect mode
-   409 00000BAB 0F22C0                  	mov	cr0, eax
+   407 00000B50 0F20C0                  	mov	eax, cr0
+   408 00000B53 6683C801                	or	eax, 1		; 16bit protect mode
+   409 00000B57 0F22C0                  	mov	cr0, eax
    410                                  
-   411 00000BAE EB00                    	jmp	$ + 2
+   411 00000B5A EB00                    	jmp	$ + 2
    412                                  
-   413 00000BB0 66                      	db	0x66
+   413 00000B5C 66                      	db	0x66
    414                                  [BITS 32]
-   415 00000BB1 EA[B80B0000]0800        	jmp	0x0008:.bit32
+   415 00000B5D EA[640B0000]0800        	jmp	0x0008:.bit32
    416                                  .bit32:
-   417 00000BB8 66B81000                	mov	ax, 0x0010
-   418 00000BBC 8ED8                    	mov	ds, ax
-   419 00000BBE 8EC0                    	mov	es, ax
-   420 00000BC0 8ED0                    	mov	ss, ax
+   417 00000B64 66B81000                	mov	ax, 0x0010
+   418 00000B68 8ED8                    	mov	ds, ax
+   419 00000B6A 8EC0                    	mov	es, ax
+   420 00000B6C 8ED0                    	mov	ss, ax
    421                                  
-   422 00000BC2 8B25[EF0B0000]          	mov	esp, [.esp_saved]
-   423 00000BC8 A1[EB0B0000]            	mov	eax, [.cr0_saved]
-   424 00000BCD 0F22C0                  	mov	cr0, eax
+   422 00000B6E 8B25[9B0B0000]          	mov	esp, [.esp_saved]
+   423 00000B74 A1[970B0000]            	mov	eax, [.cr0_saved]
+   424 00000B79 0F22C0                  	mov	cr0, eax
    425                                  	
-   426 00000BD0 EB00                    	jmp	$ + 2
+   426 00000B7C EB00                    	jmp	$ + 2
    427                                  
-   428 00000BD2 0F011D[E50B0000]        	lidt	[.idtr_save]
+   428 00000B7E 0F011D[910B0000]        	lidt	[.idtr_save]
    429                                  
-   430 00000BD9 FB                      	sti
-   431 00000BDA 61                      	popa
-   432 00000BDB 89EC                    	mov	esp, ebp
-   433 00000BDD 5D                      	pop	ebp
+   430 00000B85 FB                      	sti
+   431 00000B86 61                      	popa
+   432 00000B87 89EC                    	mov	esp, ebp
+   433 00000B89 5D                      	pop	ebp
    434                                  
    435                                  	
-   436 00000BDE C3                      	ret
+   436 00000B8A C3                      	ret
    437                                  
    438                                  .idtr_real:
-   439 00000BDF FF03                    	dw	0x3FF
-   440 00000BE1 00000000                	dd	0
+   439 00000B8B FF03                    	dw	0x3FF
+   440 00000B8D 00000000                	dd	0
    441                                  
    442                                  .idtr_save:
-   443 00000BE5 0000                    	dw	0
-   444 00000BE7 00000000                	dd	0
+   443 00000B91 0000                    	dw	0
+   444 00000B93 00000000                	dd	0
    445                                  
    446                                  .cr0_saved:
-   447 00000BEB 00000000                	dd	0
+   447 00000B97 00000000                	dd	0
    448                                  
    449                                  .esp_saved:
-   450 00000BEF 00000000                	dd	0
+   450 00000B9B 00000000                	dd	0
    451                                  
    452                                  
    453                                  [BITS 16]
    454                                  read_file:
    455                                  ; not use stack
-   456 00000BF3 50                      	push	ax
-   457 00000BF4 53                      	push	bx
-   458 00000BF5 51                      	push	cx
+   456 00000B9F 50                      	push	ax
+   457 00000BA0 53                      	push	bx
+   458 00000BA1 51                      	push	cx
    459                                  
-   460 00000BF6 6A0F68[410C]680078-     	cdecl	memcpy, 0x7800, .s0, .s1 - .s0
-   460 00000BFE E881FA83C406       
+   460 00000BA2 6A0F68[ED0B]680078-     	cdecl	memcpy, 0x7800, .s0, .s1 - .s0
+   460 00000BAA E8D5FA83C406       
    461                                  	; initialize
    462                                  
-   463 00000C04 BB2002                  	mov	bx, 32 + 256 + 256
-   464 00000C07 B92000                  	mov	cx, (512 * 32) / 512
+   463 00000BB0 BB2002                  	mov	bx, 32 + 256 + 256
+   464 00000BB3 B92000                  	mov	cx, (512 * 32) / 512
    465                                  .10L:
    466                                  
-   467 00000C0A 6800766A015368-         	cdecl	read_lba, BOOT, bx, 1, 0x7600
-   467 00000C11 [9800]E836FA83C408 
-   468 00000C19 83F800                  	cmp	ax, 0
-   469 00000C1C 741F                    	je	.10E		; fail
+   467 00000BB6 6800766A015368-         	cdecl	read_lba, BOOT, bx, 1, 0x7600
+   467 00000BBD [9800]E88AFA83C408 
+   468 00000BC5 83F800                  	cmp	ax, 0
+   469 00000BC8 741F                    	je	.10E		; fail
    470                                  	
-   471 00000C1E E82F00                  	cdecl	fat_find_file
-   472 00000C21 83F800                  	cmp	ax, 0
-   473 00000C24 7414                    	je	.12E
+   471 00000BCA E82F00                  	cdecl	fat_find_file
+   472 00000BCD 83F800                  	cmp	ax, 0
+   473 00000BD0 7414                    	je	.12E
    474                                  
-   475 00000C26 053E02                  	add	ax, 32 + 256 + 256 + 32 - 2
-   476 00000C29 6800786A015068-         	cdecl	read_lba, BOOT, ax, 1, 0x7800
-   476 00000C30 [9800]E817FA83C408 
+   475 00000BD2 053E02                  	add	ax, 32 + 256 + 256 + 32 - 2
+   476 00000BD5 6800786A015068-         	cdecl	read_lba, BOOT, ax, 1, 0x7800
+   476 00000BDC [9800]E86BFA83C408 
    477                                  
-   478 00000C38 EB03                    	jmp	.10E
+   478 00000BE4 EB03                    	jmp	.10E
    479                                  .12E:
-   480 00000C3A 43                      	inc	bx
-   481 00000C3B E2CD                    	loop	.10L
+   480 00000BE6 43                      	inc	bx
+   481 00000BE7 E2CD                    	loop	.10L
    482                                  .10E:
-   483 00000C3D 59                      	pop	cx
-   484 00000C3E 5B                      	pop	bx
-   485 00000C3F 58                      	pop	ax
+   483 00000BE9 59                      	pop	cx
+   484 00000BEA 5B                      	pop	bx
+   485 00000BEB 58                      	pop	ax
    486                                  
-   487 00000C40 C3                      	ret
+   487 00000BEC C3                      	ret
    488                                  
-   489 00000C41 46696C65206E6F7420-     .s0:	db	'File not found', 0
-   489 00000C4A 666F756E6400       
+   489 00000BED 46696C65206E6F7420-     .s0:	db	'File not found', 0
+   489 00000BF6 666F756E6400       
    490                                  .s1:
    491                                  
    492                                  
    493                                  fat_find_file:
-   494 00000C50 53                      	push	bx
-   495 00000C51 51                      	push	cx
-   496 00000C52 56                      	push	si
+   494 00000BFC 53                      	push	bx
+   495 00000BFD 51                      	push	cx
+   496 00000BFE 56                      	push	si
    497                                  
-   498 00000C53 FC                      	cld
-   499 00000C54 BB0000                  	mov	bx, 0
-   500 00000C57 B91000                  	mov	cx, 512 / 32
-   501 00000C5A BE0076                  	mov	si, 0x7600
+   498 00000BFF FC                      	cld
+   499 00000C00 BB0000                  	mov	bx, 0
+   500 00000C03 B91000                  	mov	cx, 512 / 32
+   501 00000C06 BE0076                  	mov	si, 0x7600
    502                                  .10L:
-   503 00000C5D 80640B18                	and	[si + 11], byte 0x18
+   503 00000C09 80640B18                	and	[si + 11], byte 0x18
    504                                  	; offset 11 is attribute
-   505 00000C61 7516                    	jnz	.12E	; continue
+   505 00000C0D 7516                    	jnz	.12E	; continue
    506                                  
-   507 00000C63 6A0B68[840C]56E82F-     	cdecl	memcmp, si, .s0, 8 + 3
-   507 00000C6B FA83C406           
+   507 00000C0F 6A0B68[300C]56E883-     	cdecl	memcmp, si, .s0, 8 + 3
+   507 00000C17 FA83C406           
    508                                  	; filename compare(name and extension)
-   509 00000C6F 83F800                  	cmp	ax, 0
-   510 00000C72 7505                    	jne	.12E	; continue
+   509 00000C1B 83F800                  	cmp	ax, 0
+   510 00000C1E 7505                    	jne	.12E	; continue
    511                                  
-   512 00000C74 8B5C1A                  	mov	bx, word [si + 0x1A]	; get lba
-   513 00000C77 EB05                    	jmp	.10E
+   512 00000C20 8B5C1A                  	mov	bx, word [si + 0x1A]	; get lba
+   513 00000C23 EB05                    	jmp	.10E
    514                                  .12E:
-   515 00000C79 83C620                  	add	si, 32	; continue
-   516 00000C7C E2DF                    	loop	.10L
+   515 00000C25 83C620                  	add	si, 32	; continue
+   516 00000C28 E2DF                    	loop	.10L
    517                                  .10E:
-   518 00000C7E 89D8                    	mov	ax, bx
+   518 00000C2A 89D8                    	mov	ax, bx
    519                                  
-   520 00000C80 5E                      	pop	si
-   521 00000C81 59                      	pop	cx
-   522 00000C82 5B                      	pop	bx
+   520 00000C2C 5E                      	pop	si
+   521 00000C2D 59                      	pop	cx
+   522 00000C2E 5B                      	pop	bx
    523                                  
-   524 00000C83 C3                      	ret
+   524 00000C2F C3                      	ret
    525                                  
-   526 00000C84 5350454349414C2054-     .s0:	db	'SPECIAL TXT', 0
-   526 00000C8D 585400             
+   526 00000C30 5350454349414C2054-     .s0:	db	'SPECIAL TXT', 0
+   526 00000C39 585400             
    527                                  
-   528                                  
-   529                                  
-   530 00000C90 00<rept>                	times	BOOT_SIZE - ($ - $$) - 16	db	0
-   531                                  
-   532 00001FF0 [000B0000]              	dd	TO_REAL_MODE
-   533                                  	
-   534 00001FF4 00<rept>                	times	BOOT_SIZE - ($ - $$)	db	0
+   528                                  [BITS 32]
+   529 00000C3C 00000000                LOAD_SECTOR:	dd	0
+   530                                  
+   531                                  LOAD_PARTOF_RUST:
+   532 00000C40 55                      	push	ebp
+   533 00000C41 89E5                    	mov	ebp, esp
+   534 00000C43 60                      	pusha
+   535                                  
+   536 00000C44 FA                      	cli
+   537 00000C45 0F20C0                  	mov	eax, cr0
+   538 00000C48 A3[2C0D0000]            	mov	[.cr0_saved], eax
+   539 00000C4D 8925[300D0000]          	mov	[.esp_saved], esp
+   540 00000C53 0F010D[260D0000]        	sidt	[.idtr_save]
+   541 00000C5A 0F011D[200D0000]        	lidt	[.idtr_real]
+   542                                  	
+   543 00000C61 EA[680C0000]1800        	jmp	0x0018:.bit16	; 16 bit segment selector(D/B bit)
+   544                                  [BITS 16]
+   545                                  .bit16:
+   546 00000C68 B82000                  	mov	ax, 0x0020
+   547 00000C6B 8ED8                    	mov	ds, ax
+   548 00000C6D 8EC0                    	mov	es, ax
+   549 00000C6F 8ED0                    	mov	ss, ax
+   550                                  
+   551 00000C71 0F20C0                  	mov	eax, cr0
+   552 00000C74 6625FEFFFF7F            	and	eax, 0x7FFF_FFFE	; disable PG,PE
+   553 00000C7A 0F22C0                  	mov	cr0, eax	; real mode
+   554 00000C7D EB00                    	jmp	$ + 2
+   555                                  
+   556 00000C7F EA[840C]0000            	jmp	0:.real
+   557                                  .real:
+   558 00000C84 B80000                  	mov	ax, 0x0000
+   559 00000C87 8ED8                    	mov	ds, ax
+   560 00000C89 8EC0                    	mov	es, ax
+   561 00000C8B 8ED0                    	mov	ss, ax
+   562 00000C8D BC007C                  	mov	sp, 0x7C00
+   563                                  
+   564                                  	outp	0x20, 0x11
+   564 00000C90 B011                <1>  mov al, %2
+   564 00000C92 E620                <1>  out %1, al
+   565                                  	outp	0x21, 0x08
+   565 00000C94 B008                <1>  mov al, %2
+   565 00000C96 E621                <1>  out %1, al
+   566                                  	outp	0x21, 0x04
+   566 00000C98 B004                <1>  mov al, %2
+   566 00000C9A E621                <1>  out %1, al
+   567                                  	outp	0x21, 0x01
+   567 00000C9C B001                <1>  mov al, %2
+   567 00000C9E E621                <1>  out %1, al
+   568                                  	
+   569                                  	outp	0xA0, 0x11
+   569 00000CA0 B011                <1>  mov al, %2
+   569 00000CA2 E6A0                <1>  out %1, al
+   570                                  	outp	0xA1, 0x10
+   570 00000CA4 B010                <1>  mov al, %2
+   570 00000CA6 E6A1                <1>  out %1, al
+   571                                  	outp	0xA1, 0x02
+   571 00000CA8 B002                <1>  mov al, %2
+   571 00000CAA E6A1                <1>  out %1, al
+   572                                  	outp	0xA1, 0x01
+   572 00000CAC B001                <1>  mov al, %2
+   572 00000CAE E6A1                <1>  out %1, al
+   573                                  
+   574                                  	outp	0x21, 0b1011_1000	; FDD, Slave, KBC, Timer
+   574 00000CB0 B0B8                <1>  mov al, %2
+   574 00000CB2 E621                <1>  out %1, al
+   575                                  	outp	0xA1, 0b1011_1111	; HDD
+   575 00000CB4 B0BF                <1>  mov al, %2
+   575 00000CB6 E6A1                <1>  out %1, al
+   576                                  
+   577 00000CB8 FB                      	sti
+   578 00000CB9 E87800                  	cdecl	load_rust_at
+   579 00000CBC FA                      	cli
+   580                                  
+   581                                  	outp	0x20, 0x11
+   581 00000CBD B011                <1>  mov al, %2
+   581 00000CBF E620                <1>  out %1, al
+   582                                  	outp	0x21, 0x20
+   582 00000CC1 B020                <1>  mov al, %2
+   582 00000CC3 E621                <1>  out %1, al
+   583                                  	outp	0x21, 0x04
+   583 00000CC5 B004                <1>  mov al, %2
+   583 00000CC7 E621                <1>  out %1, al
+   584                                  	outp	0x21, 0x01
+   584 00000CC9 B001                <1>  mov al, %2
+   584 00000CCB E621                <1>  out %1, al
+   585                                  
+   586                                  	outp	0xA0, 0x11
+   586 00000CCD B011                <1>  mov al, %2
+   586 00000CCF E6A0                <1>  out %1, al
+   587                                  	outp	0xA1, 0x28
+   587 00000CD1 B028                <1>  mov al, %2
+   587 00000CD3 E6A1                <1>  out %1, al
+   588                                  	outp	0xA1, 0x02
+   588 00000CD5 B002                <1>  mov al, %2
+   588 00000CD7 E6A1                <1>  out %1, al
+   589                                  	outp	0xA1, 0x01
+   589 00000CD9 B001                <1>  mov al, %2
+   589 00000CDB E6A1                <1>  out %1, al
+   590                                  
+   591                                  	outp	0x21, 0b1111_1000
+   591 00000CDD B0F8                <1>  mov al, %2
+   591 00000CDF E621                <1>  out %1, al
+   592                                  	outp	0xA1, 0b1111_1110
+   592 00000CE1 B0FE                <1>  mov al, %2
+   592 00000CE3 E6A1                <1>  out %1, al
+   593                                  
+   594 00000CE5 0F20C0                  	mov	eax, cr0
+   595 00000CE8 6683C801                	or	eax, 1		; 16bit protect mode
+   596 00000CEC 0F22C0                  	mov	cr0, eax
+   597                                  
+   598 00000CEF EB00                    	jmp	$ + 2
+   599                                  
+   600 00000CF1 66                      	db	0x66
+   601                                  [BITS 32]
+   602 00000CF2 EA[F90C0000]0800        	jmp	0x0008:.bit32
+   603                                  .bit32:
+   604 00000CF9 66B81000                	mov	ax, 0x0010
+   605 00000CFD 8ED8                    	mov	ds, ax
+   606 00000CFF 8EC0                    	mov	es, ax
+   607 00000D01 8ED0                    	mov	ss, ax
+   608                                  
+   609 00000D03 8B25[300D0000]          	mov	esp, [.esp_saved]
+   610 00000D09 A1[2C0D0000]            	mov	eax, [.cr0_saved]
+   611 00000D0E 0F22C0                  	mov	cr0, eax
+   612                                  	
+   613 00000D11 EB00                    	jmp	$ + 2
+   614                                  
+   615 00000D13 0F011D[260D0000]        	lidt	[.idtr_save]
+   616                                  
+   617 00000D1A FB                      	sti
+   618 00000D1B 61                      	popa
+   619 00000D1C 89EC                    	mov	esp, ebp
+   620 00000D1E 5D                      	pop	ebp
+   621                                  	
+   622 00000D1F C3                      	ret
+   623                                  .idtr_real:
+   624 00000D20 FF03                    	dw	0x3FF
+   625 00000D22 00000000                	dd	0
+   626                                  
+   627                                  .idtr_save:
+   628 00000D26 0000                    	dw	0
+   629 00000D28 00000000                	dd	0
+   630                                  
+   631                                  .cr0_saved:
+   632 00000D2C 00000000                	dd	0
+   633                                  
+   634                                  .esp_saved:
+   635 00000D30 00000000                	dd	0
+   636                                  [BITS 16]
+   637                                  load_rust_at:
+   638                                  	; ret
+   639 00000D34 50                      	push	ax
+   640 00000D35 B82000                  	mov	ax, BOOT_SECT + KERNEL_SECT
+   641 00000D38 0306[3C0C]              	add	ax, word [LOAD_SECTOR]
+   642 00000D3C 6800106A285068-         	cdecl	read_lba, BOOT, ax , 40, RUST_LOAD	; KERNEL_SIZE is end of kernel
+   642 00000D43 [9800]E804F983C408 
+   643 00000D4B 58                      	pop	ax
+   644 00000D4C C3                      	ret
+   645                                  
+   646 00000D4D 00<rept>                	times	BOOT_SIZE - ($ - $$) - 16	db	0
+   647                                  
+   648 00001FF0 [AC0A0000]              	dd	TO_REAL_MODE
+   649 00001FF4 [400C0000]              	dd	LOAD_PARTOF_RUST
+   650 00001FF8 [3C0C0000]              	dd	LOAD_SECTOR
+   651                                  	
+   652 00001FFC 00<rept>                	times	BOOT_SIZE - ($ - $$)	db	0

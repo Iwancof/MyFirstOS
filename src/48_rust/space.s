@@ -1,3 +1,3 @@
 %include	"../include/define.s"
 
-times	BOOT_LOAD - RUST_LOAD	db	0x02
+times	40 * 512 * 4	db	0x02
