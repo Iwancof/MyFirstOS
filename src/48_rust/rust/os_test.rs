@@ -10,13 +10,23 @@
 #![allow(non_upper_case_globals)]
 #![feature(panic_info_message)]
 #![feature(fmt_internals)]
+#![feature(coerce_unsized)]
+#![feature(const_fn)]
+#![feature(unsize)]
+#![feature(negative_impls)]
+#![feature(untagged_unions)]
+#![allow(private_in_public)]
 
 #[macro_use]
 mod rmacro;
 
-use core::panic::PanicInfo;
+mod panic;
+mod vec;
+mod alloc;
+
 use core::mem::size_of;
 use core::fmt::{self,Write,write,Error};
+//#[allow(deprecated)] use nonzero::NonZero;
 //use core::iter::IntoIterator::into_iter;
 
 const BASE : u32 = 0x102F00;
@@ -32,6 +42,7 @@ const RINGRD : u32 = 8 * 4;
 const DRAWCHAR : u32 = 9 * 4;
 const POWEROFF : u32 = 10 * 4;
 const PANICMESSAGE : u32 = 11 * 4;
+const HEAPSTART : u32 = 12 * 4;
 
 const X_MAX : usize = 60;
 const Y_MAX : usize = 30;
@@ -44,8 +55,15 @@ static mut Key : u8 = 0;
 static mut MyTerminal1 : Terminal = Terminal {form : [' ';X_MAX],x : 0, y : 0, x_offset : 1, y_offset : 0, color : 0x010F};
 static mut Keys : [KeyInfo;256] = [KeyDefault;256];
 static mut PanicMessagePointer : *mut u8 = 0 as *mut u8;
+static mut HeapStart : *mut u8 = 0 as *mut u8;
 
 static KeyDefault : KeyInfo = KeyInfo{ch : '-',is_char : true, control_func : default_key_inp};
+
+
+macro_rules! print {
+    ($($arg:tt)*) => (write!(MyTerminal1,"{}",format_args!($($arg)*)));
+}
+
 
 #[no_mangle]
 #[start]
@@ -56,20 +74,26 @@ pub unsafe fn init_os() -> fn() -> () {
 
     init_func();
     init_keys();
-    unsafe {Terminal::init_terminal(&mut MyTerminal1);}
+    Terminal::init_terminal(&mut MyTerminal1);
+    alloc::memory_init(HeapStart);
+
+    let ptr = alloc::malloc::<i32>(10);
+    *ptr.at(0) = 3;
+    *ptr.at(1) = 4;
+    print!("{}", ptr);
+    MyTerminal1.new_line();
+
+    alloc::free(ptr);
+
+    let second_ptr = alloc::malloc::<i32>(10);
+    print!("{}", second_ptr);
+    MyTerminal1.new_line();
+
+
     Initialized = true;
 
     rust_entry
     //rust_test_code
-}
-
-union StringToPointer<'a> {
-    string : &'a str,
-    pointer : *mut u8,
-}
-
-macro_rules! print {
-    ($($arg:tt)*) => (write!(MyTerminal1,"{}",format_args!($($arg)*)));
 }
 
 pub fn rust_entry() -> () {
@@ -83,7 +107,7 @@ pub fn rust_entry() -> () {
         } else {
             unsafe {
                 if !MyTerminal1.input_key(inp_key) {
-                    print!("Hello from {}", "print macro!!!");
+                    print!("Heap start at {}", HeapStart as u32);
                 }
             }
         }
@@ -430,40 +454,13 @@ unsafe fn init_func() {
     KeyBuff = *((BASE + KEYBUFF) as *mut u32) as *mut u8;
     ItemSize = *((BASE + RINGITEMSIZE) as *mut u32);
     PanicMessagePointer = *((BASE + PANICMESSAGE) as *mut u32) as *mut u8;
+    HeapStart = *((BASE + HEAPSTART) as *mut u32) as *mut u8;
 }
 
 #[lang = "eh_personality"]
 extern fn eh_personality() {}
 
-struct TestStruct { }
-impl<'a> Write for TestStruct {
-    fn write_str(&mut self, s : &str) -> Result<(),core::fmt::Error> {
-        unsafe {
-            memcpy(PanicMessagePointer,StringToPointer{string : s}.pointer,s.len());
-        }
-        Ok(())
-    }
-}
 
-unsafe fn write_default_panic_message() {
-    let panic_message = "Unknown panic\0";
-    memcpy(PanicMessagePointer,StringToPointer{string : panic_message}.pointer, panic_message.len());
-}
-
-// asm_panic is implement by assembly in kernel. show panic_handler.s
-#[panic_handler]
-unsafe extern fn panic_handler(info : &PanicInfo<'_>) -> ! { 
-    match info.message() {
-        Some(args) => match fmt::write( &mut TestStruct{}, *args) {
-            Ok(_) => {} ,
-            Err(_) => { write_default_panic_message() },
-        },
-        None => { write_default_panic_message() },
-    }
-    //let mut panic_message : TestStruct = TestStruct { };
-    //fmt::write(&mut panic_message, info.message());
-    asm_panic()
-}
 
 static mut draw_num_unsafe : extern fn(num : i32, x : usize, y : usize) -> () = draw_num_uninitialized;
 extern fn draw_num_uninitialized(num : i32, x : usize, y : usize) {}

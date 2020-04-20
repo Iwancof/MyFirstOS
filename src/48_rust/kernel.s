@@ -261,7 +261,6 @@ panic_message:	times	0xff	db	0
 
 funcs:	dd	draw_num
 	dd	test_func
-	; dd	draw_str
 	dd	draw_str
 	dd	wait_tick
 	dd	draw_pixel
@@ -272,6 +271,7 @@ funcs:	dd	draw_num
 	dd	draw_char
 	dd	power_off
 	dd	panic_message
+	dd	HEAP_START
 
 	times	KERNEL_SIZE - ($ - $$)	db	1
 
