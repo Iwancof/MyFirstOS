@@ -21,8 +21,9 @@
 mod rmacro;
 
 mod panic;
-mod vec;
+//mod vec;
 mod alloc;
+mod vector;
 
 use core::mem::size_of;
 use core::fmt::{self,Write,write,Error};
@@ -77,22 +78,11 @@ pub unsafe fn init_os() -> fn() -> () {
     Terminal::init_terminal(&mut MyTerminal1);
     alloc::memory_init(HeapStart);
 
-    let ptr = alloc::malloc::<i32>(10);
-    *ptr.at(0) = 3;
-    *ptr.at(1) = 4;
-    print!("{}", ptr);
-    MyTerminal1.new_line();
-
-    alloc::free(ptr);
-
-    let second_ptr = alloc::malloc::<i32>(10);
-    print!("{}", second_ptr);
-    MyTerminal1.new_line();
-
 
     Initialized = true;
 
-    rust_entry
+    vector::vec_test
+    //rust_entry
     //rust_test_code
 }
 

@@ -1,10 +1,15 @@
 use core::mem::size_of;
 use core::fmt::{self, Write};
 
+macro_rules! print {
+    ($($arg:tt)*) => ( unsafe { write!(super::MyTerminal1,"{}",format_args!($($arg)*)); } );
+}
+
 static SizePerOneBreak : u32 = 256;
 static HeaderSize : u32 = size_of::<u64>() as u32;
 static mut IsValid : [bool;1024] = [false;1024];
 static mut ControlNumber : usize = 0;
+static mut Test_Once : bool = false;
 
 struct BlockHeaderUnAligned<'a> {
     next : *mut BlockHeader<'a>,
@@ -22,50 +27,47 @@ union BlockHeader<'a> {
     block_info : BlockHeaderUnAligned<'a>,
     align : u64,     // align
 }
-impl Clone for BlockHeader<'_> {
-    fn clone(&self) -> Self {
-        unsafe {
-            super::MyTerminal1.write_str("call clone");
-        }
-        BlockHeader {
-            block_info : unsafe { self.block_info.clone() },
-        }
-    }
+impl<'a> BlockHeader<'a> {
+    fn next(&self) -> *mut Self { unsafe { self.block_info.next } }
 }
-pub struct Pointer<'a, T> {
-    adr : ReferenceAndPointer<'a, T>,        // raw pointer.
+impl Clone for BlockHeader<'_> {
+    fn clone(&self) -> Self { BlockHeader { block_info : unsafe { self.block_info.clone() } } }
+}
+#[derive(Copy,Clone)]
+pub struct Pointer<T> {
+    adr : *mut T,        // raw pointer.
     sz : usize,
     ctrl_num : usize,
+}
+impl<T> Pointer<T> {
+    pub fn copy(&self) -> Self {
+        Self{ adr : self.adr, sz : self.sz, ctrl_num : self.ctrl_num }
+    }
 }
 union ReferenceAndPointer<'a, T> {
     rf : &'a mut T,
     rp : *mut T,
 }
-
-impl<'a, T> Pointer<'a, T> {
+impl<'a, T> Clone for ReferenceAndPointer<'a, T> {
+    fn clone(&self) -> Self { unsafe { ReferenceAndPointer { rp : self.rp } } }
+}
+impl<T> Pointer<T> {
     pub fn at(&self,index : usize) -> &mut T {
-        unsafe {
-            ReferenceAndPointer {
-                rp : (self.adr.rp as usize + index * size_of::<T>()) as *mut T
-            }.rf
-        }
+        unsafe { ReferenceAndPointer { rp : self.adr }.rf }
     }
     fn new(rp : *mut u8, size : usize) -> Self {
         Self {
-            adr : ReferenceAndPointer { rp : rp as *mut T},
+            adr : rp as *mut T,
             sz : size,
             ctrl_num : unsafe { ControlNumber }
         }
     }
 }
-impl<'a,T> fmt::Display for Pointer<'a,T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        unsafe {
-            return write!(f, "0x{:x},len : {},Valid : {}", self.adr.rp as u32 ,self.sz, IsValid[self.ctrl_num]);
-        }
+impl<T> fmt::Display for Pointer<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { 
+        unsafe { write!(f, "0x{:x},len : {},Valid : {}", self.adr as u32 ,self.sz, IsValid[self.ctrl_num]) }
     }
 }
-
 
 static mut BasePointer : *mut BlockHeader = 0 as *mut BlockHeader;
 static mut BreakPoint : *mut BlockHeader = 0 as *mut BlockHeader;
@@ -83,6 +85,18 @@ pub unsafe fn memory_init(heap_start : *mut u8) {
 
 unsafe fn get_end_of_block(block : *mut BlockHeader) -> *mut BlockHeader {
     (block as u32 + (*block).block_info.size * HeaderSize) as *mut BlockHeader
+}
+fn get_end_of_block_test() {
+    unsafe {
+        let mut b = BlockHeader{ block_info : BlockHeaderUnAligned {
+            next : 0 as *mut BlockHeader,
+            size : 5,
+        }};
+        assert_eq!(
+            get_end_of_block(&mut b as *mut BlockHeader) as u32,
+            &mut b as *mut BlockHeader as u32 + 5 * HeaderSize,
+        );
+    }
 }
 unsafe fn get_data_region(block : *mut BlockHeader) -> *mut u8 {
     (block as u32 + HeaderSize) as *mut u8
@@ -123,7 +137,7 @@ fn calc_break_size(size : u32) -> u32 {
     (size * HeaderSize / SizePerOneBreak) + 1
 }
 
-pub fn malloc<T>(size : usize) -> Pointer<'static, T> {
+pub fn malloc<T>(size : usize) -> Pointer<T> {
     unsafe {
         let req_size = get_alloc_size(size * size_of::<T>());
 
@@ -167,91 +181,92 @@ pub fn malloc<T>(size : usize) -> Pointer<'static, T> {
         }
     }
 }
+
 pub fn free<T>(pointer : Pointer<T>) {
-    if !unsafe {IsValid[pointer.ctrl_num] } {
-        panic!("The pointer had been freed. {}", pointer);
+    if !unsafe { IsValid[pointer.ctrl_num] } {
+        panic!("Invalid pointer. {}", pointer);
     }
-    // free
-   
+    unsafe { IsValid[pointer.ctrl_num] = false; }
+
+    // "pointer" is user space address. so create this block header
+    let target = convert_blockptr_from_ptr(pointer);
+
+    // search block before target.
+    let before = unsafe { search_block_before_target(target) };
+
     unsafe {
-        // find near space
-        let target = pointer.adr.rp;
-        let target_block = target as *mut BlockHeader;
-        let (before, after) : (*mut BlockHeader,*mut BlockHeader);
-        let last : bool;
-        let (can_link_before, can_link_after) : (bool, bool);
-        let (mut current,mut prev) = (BasePointer,0 as *mut BlockHeader);
-        loop {
-            match compare_bigger_pointer(current, target) {
-                WhichBig::Equal => {
-                    // target had beed already freed.
-                    panic!("Target had beed already freed.");
-                },
-                WhichBig::Right => {
-                    // not yet
-                },
-                WhichBig::Left => {
-                    // found!
-                    
-                    current = (*current).block_info.next;
-                    // now, prev is before, current is after.
-                    
-                    can_link_before = 
-                        !same_pointer(prev, 0 as *mut BlockHeader) &&
-                        // prev at 0, target at first position. so, if same, can_link = false.
-                        same_pointer(get_end_of_block(prev), target);
-                        // and prev must be next to target.
-
-                    can_link_after = 
-                        !same_pointer(current, BasePointer) &&
-                        // "next is base" indicates, target at last potision
-                        same_pointer(get_end_of_block(target_block), current);
-                    last = false;
-                    break;
-                }
-            }
-
-            if same_pointer((*current).block_info.next, BasePointer) {
-                // target at last position
-                can_link_before = 
-                    !same_pointer(prev, 0 as *mut BlockHeader) &&
-                    // prev at 0, target at first position. so, if same, can_link = false.
-                    same_pointer(get_end_of_block(prev), target);
-                    // and prev must be next to target.
-                
-                can_link_after = false;
-                last = true;
-                break;
-            }
-            
-            prev = current;
-            current = (*current).block_info.next;
-        }
-    
-        //write!(super::MyTerminal1, "free...{},{}",can_link_before, can_link_after); 
-        write!(super::MyTerminal1,"{:x},{:x}",prev as u32,current as u32);
-        super::MyTerminal1.new_line();
-
-
-        if can_link_before && can_link_after {
-            (*prev).block_info.size += (*target_block).block_info.size + (*current).block_info.size;
-            (*prev).block_info.next = (*current).block_info.next;
-        } else if can_link_before {
-            (*prev).block_info.size += (*target_block).block_info.size;
-        } else if can_link_after {
-            (*prev).block_info.next = target_block;
-            (*target_block).block_info.size += (*current).block_info.size;
-        } else if last {
-            (*current).block_info.next = target_block;
-            (*target_block).block_info.next = BasePointer;
+        // check being able to link block which after target
+        if same_pointer( get_end_of_block(target), (*before).next() ) {
+            (*target).block_info.size += (*before).block_info.size;
+            (*target).block_info.next = (*(*before).block_info.next).block_info.next;
         } else {
-            (*prev).block_info.next = target_block;
-            (*target_block).block_info.next = current;
+            (*target).block_info.next = (*before).block_info.next;
         }
-        IsValid[pointer.ctrl_num] = false;
+
+        // check being able to link block which before target.
+        if same_pointer( get_end_of_block(before), target ) {
+            (*before).block_info.size += (*target).block_info.size;
+            (*before).block_info.next = (*target).block_info.next;
+        } else {
+            (*before).block_info.next = target;
+        }
     }
 }
-pub fn get_alloc_size(size : usize) -> u32 {    // usize is "pointer size". so begin return type usize is not suitable.
+
+fn convert_blockptr_from_ptr<T>(ptr : Pointer<T>) -> *mut BlockHeader<'static> {
+    (unsafe { ptr.adr } as u32 - HeaderSize) as *mut BlockHeader
+}
+fn convert_blockptr_from_ptr_test() {
+    let p = Pointer { adr : 0x100 as *mut u8, sz : 0, ctrl_num : 0};
+    assert_eq!(convert_blockptr_from_ptr(p) as u32 , (0x100 - HeaderSize) );
+}
+
+unsafe fn search_block_before_target(tg : *mut BlockHeader) -> *mut BlockHeader<'static> {
+    let mut cur = BasePointer.clone();
+    while !is_sandwitch(tg, cur) {
+        // expect | cur | target | cur.next |
+        // but, for instance target at last and so on, before or after must be no value. 
+        // see C implement at http://mirror.fsf.org/pmon2000/2.x/src/lib/libc/malloc.c
+        if let WhichBig::Right = compare_bigger_pointer((*cur).next(), cur) {
+            // cur.next < cur. so target at last
+            print!("case 1 ");
+            return cur;
+        }
+        cur = (*cur).next();
+    }
+    print!("case 2 ");
+    cur
+}
+
+fn search_block_before_target_test() {
+    let ptr1 = malloc::<u8>(200); // break
+    let ptr2 = malloc::<u8>(200); // break
+    let ptr3 = malloc::<u8>(200); // break
+    // create three block.
+
+    let bef1 = unsafe { search_block_before_target(convert_blockptr_from_ptr(ptr1)) } ;
+    let bef2 = unsafe { search_block_before_target(convert_blockptr_from_ptr(ptr2)) } ;
+    let bef3 = unsafe { search_block_before_target(convert_blockptr_from_ptr(ptr3)) } ;
+    //print!("0x{:x} ", bef1 as u32);
+    //print!("0x{:x} ", bef2 as u32);
+    //print!("0x{:x} ", bef3 as u32);
+    assert_eq!(bef1 as u32, 0x210008);
+    assert_eq!(bef2 as u32, 0x210108);
+    assert_eq!(bef3 as u32, 0x210208);
+
+}
+
+fn is_sandwitch(ing : *mut BlockHeader, brd : *mut BlockHeader) -> bool {
+    unsafe {
+        if let (WhichBig::Right, WhichBig::Right) = 
+            (
+                compare_bigger_pointer(brd, ing),
+                compare_bigger_pointer(ing, (*brd).next())
+            ) { true } else { false }
+    }
+}
+
+fn get_alloc_size(size : usize) -> u32 {    // usize is "pointer size". so begin return type usize is not suitable.
     (((size + size_of::<u64>() - 1) / size_of::<u64>()) + 1) as u32
     // cell(size + sizeof(header))
 }
@@ -276,5 +291,35 @@ fn compare_bigger_pointer<T,U>(x : *mut T, y : *mut U) -> WhichBig {
 }
 
 
+pub fn memory_test() { 
+    if unsafe { Test_Once } {
+        return;
+    }
+    unsafe { Test_Once = true };
+    
+    convert_blockptr_from_ptr_test();
+    search_block_before_target_test();  
+    get_end_of_block_test();
+}
 
+pub fn malloc_free_test() {
+    if unsafe { Test_Once } {
+        return;
+    }
+    unsafe { Test_Once = true };
+
+    let ptr1 = malloc::<u8>(200);
+    let ptr2 = malloc::<u8>(200);
+    let ptr3 = malloc::<u8>(200);
+
+    free(ptr2);
+}
+
+pub fn NullPointer<T>() -> Pointer<T> {
+    Pointer {
+        adr : 0 as *mut T,
+        sz : 0,
+        ctrl_num : 0,
+    }
+}
 

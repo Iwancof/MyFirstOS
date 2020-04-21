@@ -5,6 +5,6 @@ cd ..
 nasm	boot.s -o boot.bin -l boot.lst
 nasm	kernel.s -o kernel.bin -l kernel.lst
 nasm	space.s -o space.bin -l space.lst
-echo "i686-unknown-linux-gnu-ld os_test.o -e init_os -o os_test.bin -Ttext 0x1000"
+echo "i686-unknown-linux-gnu-ld os_test.o -o os_test.bin -nostdlib -T linker.ld -e init_os"
 pause
 copy	/B boot.bin+kernel.bin+rust\os_test.bin+space.bin boot.img
