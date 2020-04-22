@@ -23,7 +23,8 @@ mod rmacro;
 mod panic;
 //mod vec;
 mod alloc;
-mod vector;
+//mod vector;
+mod vec3;
 
 use core::mem::size_of;
 use core::fmt::{self,Write,write,Error};
@@ -81,7 +82,7 @@ pub unsafe fn init_os() -> fn() -> () {
 
     Initialized = true;
 
-    vector::vec_test
+    vec3::vec_test
     //rust_entry
     //rust_test_code
 }

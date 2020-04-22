@@ -8,7 +8,7 @@ kotetuco 2008 - 2016
 /*出力オブジェクトファイル(Makefileで定義)*/
 
 
-ENTRY(init_os)
+/* ENTRY(init_os) *?
 
 /*出力フォーマット*/
 /* OUTPUT_FORMAT("binary") */

@@ -43,6 +43,9 @@ impl<T> Pointer<T> {
     pub fn copy(&self) -> Self {
         Self{ adr : self.adr, sz : self.sz, ctrl_num : self.ctrl_num }
     }
+    pub fn is_valid(&self) -> bool {
+        unsafe { IsValid[self.ctrl_num] }
+    }
 }
 union ReferenceAndPointer<'a, T> {
     rf : &'a mut T,
@@ -185,6 +188,8 @@ pub fn malloc<T>(size : usize) -> Pointer<T> {
 pub fn free<T>(pointer : Pointer<T>) {
     if !unsafe { IsValid[pointer.ctrl_num] } {
         panic!("Invalid pointer. {}", pointer);
+    } else {
+        print!("valid {}", pointer.ctrl_num);
     }
     unsafe { IsValid[pointer.ctrl_num] = false; }
 
@@ -229,12 +234,12 @@ unsafe fn search_block_before_target(tg : *mut BlockHeader) -> *mut BlockHeader<
         // see C implement at http://mirror.fsf.org/pmon2000/2.x/src/lib/libc/malloc.c
         if let WhichBig::Right = compare_bigger_pointer((*cur).next(), cur) {
             // cur.next < cur. so target at last
-            print!("case 1 ");
+            //print!("case 1 ");
             return cur;
         }
         cur = (*cur).next();
     }
-    print!("case 2 ");
+    //print!("case 2 ");
     cur
 }
 
@@ -315,7 +320,7 @@ pub fn malloc_free_test() {
     free(ptr2);
 }
 
-pub fn NullPointer<T>() -> Pointer<T> {
+pub fn null_pointer<T>() -> Pointer<T> {
     Pointer {
         adr : 0 as *mut T,
         sz : 0,
