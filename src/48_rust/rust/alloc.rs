@@ -1,5 +1,6 @@
 use core::mem::size_of;
 use core::fmt::{self, Write};
+use core::ops::{Deref, DerefMut};
 
 macro_rules! print {
     ($($arg:tt)*) => ( unsafe { write!(super::MyTerminal1,"{}",format_args!($($arg)*)); } );
@@ -7,7 +8,7 @@ macro_rules! print {
 
 static SizePerOneBreak : u32 = 256;
 static HeaderSize : u32 = size_of::<u64>() as u32;
-static mut IsValid : [bool;1025] = [false;1025];
+static mut IsValid : [u8;1024] = [0;1024];
 static mut ControlNumber : usize = 0;
 static mut Test_Once : bool = false;
 
@@ -46,7 +47,7 @@ impl<T> Pointer<T> {
     pub fn is_valid(&self) -> bool {
         //print!("index:{}",self.ctrl_num);
         //new_line(); 
-        unsafe { IsValid[self.ctrl_num] }
+        unsafe { valid_field_get(self.ctrl_num) }
     }
 }
 union ReferenceAndPointer<'a, T> {
@@ -59,6 +60,9 @@ impl<'a, T> Clone for ReferenceAndPointer<'a, T> {
 }
 impl<T> Pointer<T> {
     pub fn at(&self,index : usize) -> &mut T {
+        if self.sz <= index {
+            panic!("invalid access");
+        }
         unsafe { ReferenceAndPointer { rp : self.adr }.rf }
     }
     fn new(rp : *mut u8, size : usize) -> Self {
@@ -68,7 +72,23 @@ impl<T> Pointer<T> {
             ctrl_num : unsafe { ControlNumber }
         }
     }
+    pub fn deref(&self) -> &mut T {
+        self.at(0)
+    }
 }
+impl<T> Deref for Pointer<T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        self.at(0)
+    }
+}
+impl<T> DerefMut for Pointer<T> {
+    fn deref_mut(&mut self) -> &mut T {
+        self.at(0)
+    }
+}
+
+
 impl<T> fmt::Display for Pointer<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { 
         unsafe { write!(f, "0x{:x},len : {},Valid : {}", self.adr as u32 ,self.sz, self.is_valid()) }
@@ -167,7 +187,7 @@ pub fn malloc<T>(size : usize) -> Pointer<T> {
     
                 // return .... start at new_block, max_size is size.
                 ControlNumber += 1;
-                IsValid[ControlNumber] = true;  // valid!!
+                valid_field_set(ControlNumber, true);  // valid!!
                 return Pointer::new(get_data_region(new_block), size);
 
             }
@@ -194,7 +214,7 @@ pub fn free<T>(pointer : Pointer<T>) {
     } else {
         //print!("valid {}", pointer.ctrl_num);
     }
-    unsafe { IsValid[pointer.ctrl_num] = false; }
+    unsafe { valid_field_set(pointer.ctrl_num, false); }
 
     // "pointer" is user space address. so create this block header
     let target = convert_blockptr_from_ptr(pointer);
@@ -333,5 +353,27 @@ pub fn null_pointer<T>() -> Pointer<T> {
 
 fn new_line() {
     unsafe { super::MyTerminal1.new_line(); }
+}
+
+fn valid_field_set(i : usize, x : bool) {
+    unsafe {
+        let array_index = i / 8;
+        let inbit_index = i % 8;
+        let mut data = IsValid[array_index];
+        if x {
+            data |= 1 << inbit_index;
+        } else {
+            data &= !(1 << inbit_index);
+        }
+        IsValid[array_index] = data;
+    }
+}
+
+fn valid_field_get(i : usize) -> bool {
+    unsafe {
+        let array_index = i / 8;
+        let inbit_index = i % 8;
+        IsValid[array_index] & (1 << inbit_index) != 0
+    }
 }
 

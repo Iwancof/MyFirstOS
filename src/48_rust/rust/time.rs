@@ -2,6 +2,8 @@ use core::fmt::Write;
 use super::vec::{Vec, VecElement};
 use super::alloc::{Pointer};
 
+static mut MainTimer : Option<Timer> = None;
+
 macro_rules! print {
     ($($arg:tt)*) => (unsafe { write!(super::MyTerminal1,"{}",format_args!($($arg)*)) } );
 }
@@ -10,49 +12,105 @@ fn new_line() {
 }
 
 #[derive(Copy,Clone)]
-struct Task {
+pub struct Task {
     proc : fn() -> (),
     frec : u128,
 }
 
-struct Timer {
+pub struct Timer {
     tasks : Vec<Task>,
     count : u128,
 }
 
 impl Timer {
-    pub fn subscribe(&mut self, task : Task) {
+    fn subscribe_with_task(&mut self, task : Task) {
         self.tasks.push(task);
     }
-    pub fn subscribe_with_task(&mut self, func : fn() -> (), frec : u128) {
+    fn subscribe(&mut self, func : fn() -> (), frec : u128) {
         self.tasks.push( Task { proc : func, frec : frec } );
     }
-    pub fn front(&mut self) {
+    fn front(&mut self) {
         // execute per timer.
         self.count += 1;
         for p in self.tasks.to_iter() {
-            if self.count % p.frec == 0 {
+            //print!("{}", self.count % p.frec);
+            if (self.count % p.frec) == 0 {
                 (p.proc)();
             }
         }
     }
 }
 
-static mut main_timer : Option<Timer> = None;
 
 pub fn init_timer() {
     unsafe {
-        main_timer = Some(Timer {
+        MainTimer = Some(Timer {
             tasks : Vec::new(),
             count : 0,
         });
+        *super::RustTimerAddress = kernel_timeint_front;
     }
-    unsafe {
-        //*super::RustTimerAddress = (main_timer.unwrap().front) as &fn() -> ();
-    }
-    return main_timer.unwrap().front;
-
 }
 
-fn test() {
+fn kernel_timeint_front() {
+    unsafe {
+        if let Some(x) = &mut MainTimer {
+            x.front();
+        }
+    }
+}
+
+#[no_mangle]
+extern fn __umodti3(mut diend : u128, mut disor : u128) -> u128 {
+    while disor <= diend {
+        diend -= disor
+    }
+
+    diend
+}
+#[no_mangle]
+extern fn __udivti3(mut diend : u128, mut disor : u128) -> u128 {
+    panic!("Call udivti3");
+    0
+}
+
+/*
+#[no_mangle]
+extern fn __udivti3(mut diend : u128, mut disor : u128) -> u128 {
+    if disor ==  0 {
+        panic!("0 div");
+        unsafe {
+            asm!("int   eax" : "={eax}"(0) : : : "intel" );
+        }
+    }
+    let mut ret : u128 = 0;
+    loop {
+        if diend < disor {
+            //return ret;
+            return 1234;
+        }
+        
+        diend -= disor;
+        ret += 1;
+    }
+}
+*/
+
+pub fn subscribe_with_task(task : Task) {
+    unsafe {
+        if let Some(x) = &mut MainTimer {
+            x.tasks.push(task);
+        } else {
+            panic!("rust timer uninitialized");
+        }
+    }
+}
+pub fn subscribe(func : fn() -> (), frec : u128) {
+    unsafe {
+        if let Some(x) = &mut MainTimer {
+            x.tasks.push( Task { proc : func, frec : frec } );
+        } else {
+            panic!("rust timer uninitialized");
+        }
+    }
 }

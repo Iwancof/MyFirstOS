@@ -33,7 +33,7 @@ impl<T : Clone> Vec<T> {
             if !ret.is_valid() {
                 panic!("invalid at {} ", i);
             }
-            ret = (*ret.at(0)).next.copy();
+            ret = (*ret).next.copy();
         }
         ret
     }
@@ -43,20 +43,20 @@ impl<T : Clone> Vec<T> {
             // if no vec has no element. we must overwrite head.
 
             let ptr = malloc::<VecElement<T>>(1);
-            (*ptr.at(0)) = VecElement::new(elm);
+            *ptr.deref() = VecElement::new(elm);
             self.head = ptr;
             self.count += 1;
             return;
         }
         let tail = self.at(self.count - 1);
-        (*tail.at(0)).next = VecElement::new_inheap(elm);
+        (*tail.deref()).next = VecElement::new_inheap(elm);
         self.count += 1;
     }
     pub fn get(&self, index : usize) -> T {
-        self.at(index).at(0).item.clone()
+        (*self.at(index)).item.clone()
     }
     pub fn set(&mut self, index : usize, item : T) {
-        self.at(index).at(0).item = item;
+        (*self.at(index).deref()).item = item;
     }
     pub fn to_iter(&self) -> VecIter<T> {
         VecIter{ now : self.head.copy() }
@@ -69,7 +69,7 @@ impl<T : Clone> Drop for Vec<T> {
     fn drop(&mut self) {
         let mut crt = self.head.copy();
         for i in 0..self.count {
-            let tmp = crt.at(0).next.copy();
+            let tmp = (*crt).next.copy();
             free(crt);
             crt = tmp;
         }
@@ -84,8 +84,8 @@ impl<T> VecElement<T> {
     }
     pub fn new_inheap(elm : T) -> Pointer<Self> {
         let obj = Self::new(elm);
-        let ptr = malloc::<Self>(1);
-        *ptr.at(0) = obj;
+        let mut ptr = malloc::<Self>(1);
+        *ptr = obj;
         ptr
 
     }
@@ -100,8 +100,8 @@ impl<T : Clone> Iterator for VecIter<T> {
         if !self.now.is_valid() {
             return None;
         } else {
-            let ret = self.now.at(0).item.clone();
-            self.now = self.now.at(0).next.copy();
+            let ret = (*self.now).item.clone();
+            self.now = (*self.now).next.copy();
             Some(ret)
         }
     }

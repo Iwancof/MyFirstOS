@@ -30,6 +30,7 @@ use core::mem::size_of;
 use core::fmt::{self,Write,write,Error};
 //#[allow(deprecated)] use nonzero::NonZero;
 //use core::iter::IntoIterator::into_iter;
+use time::{subscribe_with_task, subscribe};
 
 const BASE : u32                = 0x102F00;
 const DRAWNUM : u32             = 0  * 4;
@@ -65,7 +66,7 @@ static KeyDefault : KeyInfo = KeyInfo{ch : '-',is_char : true, control_func : de
 
 
 macro_rules! print {
-    ($($arg:tt)*) => (write!(MyTerminal1,"{}",format_args!($($arg)*)));
+    ($($arg:tt)*) => (unsafe {write!(MyTerminal1,"{}",format_args!($($arg)*)) });
 }
 
 
@@ -84,11 +85,22 @@ pub unsafe fn init_os() -> fn() -> () {
 
 
     Initialized = true;
-    
-    string::string_test
+   
+    subscribe(test_timer, 1000);
+
+    //string::string_test
     //vec::vec_test
-    //rust_entry
+    rust_entry
     //rust_test_code
+}
+
+fn test_timer() {
+    print!("Hello from timer");
+    new_line();
+}
+
+fn new_line() {
+    unsafe { MyTerminal1.new_line(); }
 }
 
 pub fn rust_entry() -> () {
