@@ -7,7 +7,7 @@ macro_rules! print {
 
 static SizePerOneBreak : u32 = 256;
 static HeaderSize : u32 = size_of::<u64>() as u32;
-static mut IsValid : [bool;1024] = [false;1024];
+static mut IsValid : [bool;1025] = [false;1025];
 static mut ControlNumber : usize = 0;
 static mut Test_Once : bool = false;
 
@@ -44,11 +44,14 @@ impl<T> Pointer<T> {
         Self{ adr : self.adr, sz : self.sz, ctrl_num : self.ctrl_num }
     }
     pub fn is_valid(&self) -> bool {
+        //print!("index:{}",self.ctrl_num);
+        //new_line(); 
         unsafe { IsValid[self.ctrl_num] }
     }
 }
 union ReferenceAndPointer<'a, T> {
     rf : &'a mut T,
+    #[no_mangle]
     rp : *mut T,
 }
 impl<'a, T> Clone for ReferenceAndPointer<'a, T> {
@@ -68,14 +71,14 @@ impl<T> Pointer<T> {
 }
 impl<T> fmt::Display for Pointer<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { 
-        unsafe { write!(f, "0x{:x},len : {},Valid : {}", self.adr as u32 ,self.sz, IsValid[self.ctrl_num]) }
+        unsafe { write!(f, "0x{:x},len : {},Valid : {}", self.adr as u32 ,self.sz, self.is_valid()) }
     }
 }
 
 static mut BasePointer : *mut BlockHeader = 0 as *mut BlockHeader;
 static mut BreakPoint : *mut BlockHeader = 0 as *mut BlockHeader;
 
-pub unsafe fn memory_init(heap_start : *mut u8) {
+pub unsafe fn init_memory(heap_start : *mut u8) {
     BasePointer = heap_start as *mut BlockHeader;
     *BasePointer = BlockHeader {
         block_info : BlockHeaderUnAligned {
@@ -186,10 +189,10 @@ pub fn malloc<T>(size : usize) -> Pointer<T> {
 }
 
 pub fn free<T>(pointer : Pointer<T>) {
-    if !unsafe { IsValid[pointer.ctrl_num] } {
+    if !unsafe { pointer.is_valid() } {
         panic!("Invalid pointer. {}", pointer);
     } else {
-        print!("valid {}", pointer.ctrl_num);
+        //print!("valid {}", pointer.ctrl_num);
     }
     unsafe { IsValid[pointer.ctrl_num] = false; }
 
@@ -326,5 +329,9 @@ pub fn null_pointer<T>() -> Pointer<T> {
         sz : 0,
         ctrl_num : 0,
     }
+}
+
+fn new_line() {
+    unsafe { super::MyTerminal1.new_line(); }
 }
 

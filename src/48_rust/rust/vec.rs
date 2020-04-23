@@ -1,119 +1,143 @@
-use core::ops::{self,Index,IndexMut};
 
+use super::alloc::{malloc, free, null_pointer, Pointer};
+use core::fmt::{Write, Display};
+use core::ops::{Index, IndexMut};
+use core::clone::Clone;
 
-pub struct Vec<'a, T> {
-    head : VecElement<'a, T>,
+macro_rules! print {
+    ($($arg:tt)*) => (unsafe { write!(super::MyTerminal1,"{}",format_args!($($arg)*)) } );
+}
+
+pub struct Vec<T : core::clone::Clone> {
+    // Vector front
+    head : Pointer<VecElement<T>>,
     count : usize,
 }
-
-pub enum VecElement<'a, T> {
-    HasElement(RawVecElement<'a, T>),
-    NoElement,
+pub struct VecElement<T> {
+    item : T,
+    next : Pointer<VecElement<T>>,
 }
 
-struct RawVecElement<'a, T> {
-    item : VecItem<T>,
-    next : &'a mut VecElement<'a, T>,
-}
-
-enum VecItem<T> {
-    HasValue(T),
-    NoValue,
-}
-
-impl<'a, T> Vec<'a, T> {
+impl<T : Clone> Vec<T> {
     pub fn new() -> Self {
-        // create empty vec
-        Vec{ head : VecElement::NoElement, count : 0}
+        // return no element vector
+        Self {
+            head : null_pointer::<VecElement<T>>(),
+            count : 0
+        }
     }
-    pub fn at_mut(&mut self, index : usize) -> Result<&mut VecElement<'a, T>, i32> {
-        let mut current = &mut self.head;
+    fn at(&self, index : usize) -> Pointer<VecElement<T>>{
+        // this func require only reference. but element is mut because return Pointer.
+        let mut ret = self.head.copy();
         for i in 0..index {
-            match current {
-                VecElement::HasElement(raw_vec) => {
-                    current = raw_vec.next;
-                },
-                VecElement::NoElement => {
-                    return Err(i as i32);
-                }
+            if !ret.is_valid() {
+                panic!("invalid at {} ", i);
             }
+            ret = (*ret.at(0)).next.copy();
         }
-        let (flag, code) : (bool, i32);
-        match current {
-            VecElement::HasElement(raw_vec) => {
-                match raw_vec.item {
-                    VecItem::HasValue(_) => { Ok(current) }
-                    VecItem::NoValue => { Err(-1) }
-                }
-            },
-            VecElement::NoElement => {
-                Err(index as i32)
-            }
-        }
+        ret
     }
-    pub fn at(&self, index : usize) -> Result<&VecElement<'a, T>, i32> {
-        let mut current = &self.head;
-        for i in 0..index {
-            match current {
-                VecElement::HasElement(raw_vec) => {
-                    current = raw_vec.next;
-                },
-                VecElement::NoElement => {
-                    return Err(i as i32);
-                }
-            }
+    pub fn push(&mut self, elm : T) {
+        //print!("{}", elm);
+        if self.count == 0 {
+            // if no vec has no element. we must overwrite head.
+
+            let ptr = malloc::<VecElement<T>>(1);
+            (*ptr.at(0)) = VecElement::new(elm);
+            self.head = ptr;
+            self.count += 1;
+            return;
         }
-        let (flag, code) : (bool, i32);
-        match current {
-            VecElement::HasElement(raw_vec) => {
-                match raw_vec.item {
-                    VecItem::HasValue(_) => { Ok(current) }
-                    VecItem::NoValue => { Err(-1) }
-                }
-            },
-            VecElement::NoElement => {
-                Err(index as i32)
-            }
-        }
+        let tail = self.at(self.count - 1);
+        (*tail.at(0)).next = VecElement::new_inheap(elm);
+        self.count += 1;
     }
-    pub fn push(&mut self, item : T) -> Result<usize, i32> {
-        match self.at_mut(self.count) {
-            Ok(rf) => {
-                match *rf {
-                    VecElement::HasElement(elm) => {
-                        elm.next = &VecElement::HasValue(RawVecElement {} );
-                    },
-                    VecElement::NoElement => {
-                        panic!("Unexpected error");
-                    }
-                };
-                self.count += 1;
-                Ok(self.count)
-            },
-            Err(code) => {
-                Err(code)
-            }
+    pub fn get(&self, index : usize) -> T {
+        self.at(index).at(0).item.clone()
+    }
+    pub fn set(&mut self, index : usize, item : T) {
+        self.at(index).at(0).item = item;
+    }
+    pub fn to_iter(&self) -> VecIter<T> {
+        VecIter{ now : self.head.copy() }
+    }
+    pub fn size(&self) -> usize {
+        self.count
+    }
+}
+impl<T : Clone> Drop for Vec<T> {
+    fn drop(&mut self) {
+        let mut crt = self.head.copy();
+        for i in 0..self.count {
+            let tmp = crt.at(0).next.copy();
+            free(crt);
+            crt = tmp;
         }
     }
 }
-
-impl<'a, T> core::ops::Index<usize> for Vec<'a, T> {
-    type Output = VecElement<'a, T>;
-    fn index(&self, index: usize) -> &Self::Output {
-        match self.at(index) {
-            Ok(vec_ref) => vec_ref,
-            Err(code) => panic!("Index access error:{}", code)
+impl<T> VecElement<T> {
+    pub fn new(elm : T) -> Self {
+        Self {
+            item : elm,
+            next : null_pointer::<Self>(),
         }
     }
-}
+    pub fn new_inheap(elm : T) -> Pointer<Self> {
+        let obj = Self::new(elm);
+        let ptr = malloc::<Self>(1);
+        *ptr.at(0) = obj;
+        ptr
 
-impl<'a, T> core::ops::IndexMut<usize> for Vec<'a, T> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        match self.at_mut(index) {
-            Ok(vec_ref) => vec_ref,
-            Err(code) => panic!("Index access error:{}", code),
+    }
+}
+pub struct VecIter<T> {
+    now : Pointer<VecElement<T>>,
+}
+impl<T : Clone> Iterator for VecIter<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<T> {
+        //print!("{}", self.now);
+        if !self.now.is_valid() {
+            return None;
+        } else {
+            let ret = self.now.at(0).item.clone();
+            self.now = self.now.at(0).next.copy();
+            Some(ret)
         }
     }
 }
 
 
+pub fn vec_test() {
+    unsafe {
+        if Once == true {
+            return;
+        }
+        Once = true;
+    }
+    let mut primes = Vec::<u32>::new();
+    primes.push(2);
+    for i in 3..100 {
+        let mut prime = true;
+        for p in primes.to_iter() {
+            if i % p == 0 {
+                prime = false;
+                break;
+            }
+        }
+        if prime {
+            primes.push(i)
+        }
+    }
+    for p in primes.to_iter().map(|x| x + 1) {
+        print!("{} ",p);
+        new_line();
+    }
+
+}
+
+fn new_line() {
+    unsafe { super::MyTerminal1.new_line(); }
+}
+
+static mut Once : bool = false;

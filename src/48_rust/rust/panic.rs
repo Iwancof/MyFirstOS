@@ -1,6 +1,9 @@
 use core::fmt::{Write,write};
 use core::panic::PanicInfo;
 
+macro_rules! print {
+    ($($arg:tt)*) => ( unsafe { write!(super::MyTerminal1,"{}",format_args!($($arg)*)); } );
+}
 
 union StringToPointer<'a> {
     string : &'a str,
@@ -24,9 +27,12 @@ unsafe fn write_default_panic_message() {
 #[panic_handler]
 unsafe extern fn panic_handler(info : &PanicInfo<'_>) -> ! { 
     match info.message() {
-        Some(args) => match write( &mut WrapOfMemcpyToGlobal{}, *args) {
-            Ok(_) => {} ,
-            Err(_) => { write_default_panic_message() },
+        Some(args) => {
+            print!("{}", args);
+            match write( &mut WrapOfMemcpyToGlobal{}, *args) {
+                Ok(_) => {} ,
+                Err(_) => { write_default_panic_message() },
+            }
         },
         None => { write_default_panic_message() },
     }

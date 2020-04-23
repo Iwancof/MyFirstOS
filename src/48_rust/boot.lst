@@ -24,7 +24,7 @@
      4                              <1> CR3_BASE		equ	0x0010_5000
      5                              <1> RUST_LOAD		equ	0x0000_1000
      6                              <1> RUST_MAIN		equ	0x0020_0000
-     7                              <1> RUST_SIZE		equ	0x0001_0000
+     7                              <1> RUST_SIZE		equ	0x0002_0000
      8                              <1> RUST_SECT		equ	RUST_SIZE / SECT_SIZE
      9                              <1> RUST_END		equ	RUST_LOAD + RUST_SIZE
     10                              <1> HEAP_START		equ	RUST_MAIN + RUST_SIZE

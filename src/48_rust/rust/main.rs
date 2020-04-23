@@ -21,30 +21,31 @@
 mod rmacro;
 
 mod panic;
-//mod vec;
+mod vec;
 mod alloc;
-//mod vector;
-mod vec3;
+mod string;
+mod time;
 
 use core::mem::size_of;
 use core::fmt::{self,Write,write,Error};
 //#[allow(deprecated)] use nonzero::NonZero;
 //use core::iter::IntoIterator::into_iter;
 
-const BASE : u32 = 0x102F00;
-const DRAWNUM : u32 = 0 * 4;
-const TESTFUNC : u32 = 1 * 4;
-const DRAWSTR : u32 = 2 * 4;
-const WAITTICK : u32 = 3 * 4;
-const DRAWPIXEL : u32 = 4 * 4;
-const RINGITEMSIZE : u32 = 5 * 4;
-const KEYBUFF : u32 = 6 * 4;
-const PANICHANDLER : u32 = 7 * 4;
-const RINGRD : u32 = 8 * 4;
-const DRAWCHAR : u32 = 9 * 4;
-const POWEROFF : u32 = 10 * 4;
-const PANICMESSAGE : u32 = 11 * 4;
-const HEAPSTART : u32 = 12 * 4;
+const BASE : u32                = 0x102F00;
+const DRAWNUM : u32             = 0  * 4;
+const TESTFUNC : u32            = 1  * 4;
+const DRAWSTR : u32             = 2  * 4;
+const WAITTICK : u32            = 3  * 4;
+const DRAWPIXEL : u32           = 4  * 4;
+const RINGITEMSIZE : u32        = 5  * 4;
+const KEYBUFF : u32             = 6  * 4;
+const PANICHANDLER : u32        = 7  * 4;
+const RINGRD : u32              = 8  * 4;
+const DRAWCHAR : u32            = 9  * 4;
+const POWEROFF : u32            = 10 * 4;
+const PANICMESSAGE : u32        = 11 * 4;
+const HEAPSTART : u32           = 12 * 4;
+const RUSTTIMERADDRESS : u32    = 13 * 4;
 
 const X_MAX : usize = 60;
 const Y_MAX : usize = 30;
@@ -58,6 +59,7 @@ static mut MyTerminal1 : Terminal = Terminal {form : [' ';X_MAX],x : 0, y : 0, x
 static mut Keys : [KeyInfo;256] = [KeyDefault;256];
 static mut PanicMessagePointer : *mut u8 = 0 as *mut u8;
 static mut HeapStart : *mut u8 = 0 as *mut u8;
+static mut RustTimerAddress : *mut fn() -> () = 0 as *mut fn() -> ();
 
 static KeyDefault : KeyInfo = KeyInfo{ch : '-',is_char : true, control_func : default_key_inp};
 
@@ -77,12 +79,14 @@ pub unsafe fn init_os() -> fn() -> () {
     init_func();
     init_keys();
     Terminal::init_terminal(&mut MyTerminal1);
-    alloc::memory_init(HeapStart);
+    alloc::init_memory(HeapStart);
+    time::init_timer();
 
 
     Initialized = true;
-
-    vec3::vec_test
+    
+    string::string_test
+    //vec::vec_test
     //rust_entry
     //rust_test_code
 }
@@ -446,6 +450,7 @@ unsafe fn init_func() {
     ItemSize = *((BASE + RINGITEMSIZE) as *mut u32);
     PanicMessagePointer = *((BASE + PANICMESSAGE) as *mut u32) as *mut u8;
     HeapStart = *((BASE + HEAPSTART) as *mut u32) as *mut u8;
+    RustTimerAddress = *((BASE + RUSTTIMERADDRESS) as *mut u32) as *mut fn() -> ();
 }
 
 #[lang = "eh_personality"]

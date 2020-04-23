@@ -129,6 +129,7 @@ kernel:
 	;call	0x2010c5
 	call	eax
 	mov	[RUST_ENTRY], eax
+		
 
 .90L:
 	cdecl	[RUST_ENTRY]
@@ -242,18 +243,9 @@ ope_exce:
 test_func:
 	cdecl	draw_str, 0, 20, 0x010F, .t0
 	ret
-
 .t0:	db	"Test message", 0
 
-debug:
-	push	ebp
-	mov	ebp, esp
-	cdecl	draw_str, 0, 1, 0x010F, .t0
-	mov	esp, ebp
-	pop	ebp
-
-	ret
-.t0:	db	"test"
+RUSTTIMERADDRESS:		dd	0
 
 panic_message:	times	0xff	db	0
 
@@ -272,6 +264,7 @@ funcs:	dd	draw_num
 	dd	power_off
 	dd	panic_message
 	dd	HEAP_START
+	dd	RUSTTIMERADDRESS
 
 	times	KERNEL_SIZE - ($ - $$)	db	1
 
