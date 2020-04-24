@@ -127,6 +127,7 @@ kernel:
 
 	; cdecl	eax	; initialize function. eax = main_entry_point
 	;call	0x2010c5
+	
 	call	eax
 	mov	[RUST_ENTRY], eax
 		

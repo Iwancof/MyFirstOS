@@ -4,12 +4,6 @@ use super::alloc::{Pointer};
 
 static mut MainTimer : Option<Timer> = None;
 
-macro_rules! print {
-    ($($arg:tt)*) => (unsafe { write!(super::MyTerminal1,"{}",format_args!($($arg)*)) } );
-}
-fn new_line() {
-    unsafe { super::MyTerminal1.new_line(); }
-}
 
 #[derive(Copy,Clone)]
 pub struct Task {
@@ -32,7 +26,7 @@ impl Timer {
     fn front(&mut self) {
         // execute per timer.
         self.count += 1;
-        for p in self.tasks.to_iter() {
+        for p in self.tasks.iter() {
             //print!("{}", self.count % p.frec);
             if (self.count % p.frec) == 0 {
                 (p.proc)();

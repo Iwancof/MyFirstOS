@@ -470,86 +470,87 @@
    127                                  
    128                                  	; cdecl	eax	; initialize function. eax = main_entry_point
    129                                  	;call	0x2010c5
-   130 000002AC FFD0                    	call	eax
-   131 000002AE A3[78030000]            	mov	[RUST_ENTRY], eax
-   132                                  		
-   133                                  
-   134                                  .90L:
-   135 000002B3 FF15[78030000]          	cdecl	[RUST_ENTRY]
-   136                                  	;push	eax
-   137                                  	;pop	eax
-   138                                  	;cdecl	draw_num, eax, 0, 1
-   139                                  
-   140                                  	; jmp	.90L
-   141                                  
-   142                                  	; cdecl	draw_num, _KEY_BUFF, 0, 0
-   143                                  
-   144 000002B9 EBF8                    	jmp	.90L
-   145                                  
-   146                                  	; jmp	$
-   147                                  
+   130                                  	
+   131 000002AC FFD0                    	call	eax
+   132 000002AE A3[78030000]            	mov	[RUST_ENTRY], eax
+   133                                  		
+   134                                  
+   135                                  .90L:
+   136 000002B3 FF15[78030000]          	cdecl	[RUST_ENTRY]
+   137                                  	;push	eax
+   138                                  	;pop	eax
+   139                                  	;cdecl	draw_num, eax, 0, 1
+   140                                  
+   141                                  	; jmp	.90L
+   142                                  
+   143                                  	; cdecl	draw_num, _KEY_BUFF, 0, 0
+   144                                  
+   145 000002B9 EBF8                    	jmp	.90L
+   146                                  
+   147                                  	; jmp	$
    148                                  
-   149                                  .10L:
-   150                                  
-   151 000002BB E8E10F0000              	cdecl	draw_rotation_bar
-   152                                  
-   153 000002C0 68[68030000]68-         	cdecl	ring_rd, _KEY_BUFF, .int_key
-   153 000002C6 [440B0000]E88D0800-
-   153 000002CE 006683C408         
-   154 000002D3 83F800                  	cmp	eax, 0
-   155 000002D6 74E3                    	je	.10L
-   156                                  
-   157 000002D8 68[440B0000]6A1D6A-     	cdecl	draw_key, 2, 29, _KEY_BUFF
-   157 000002E0 02E8D20800006683C4-
-   157 000002E9 0C                 
-   158                                  
-   159 000002EA A0[68030000]            	mov	al, [.int_key]
-   160 000002EF 3C02                    	cmp	al, 0x02
-   161 000002F1 7522                    	jne	.14L
-   162                                  
-   163 000002F3 FF15F09B0000            	call	[BOOT_LOAD + BOOT_SIZE - 16]
-   164 000002F9 BE00780000              	mov	esi, 0x7800
-   165 000002FE C6462000                	mov	[esi + 32], byte 0
-   166 00000302 5668040F00006A006A-     	cdecl	draw_str, 0, 0, 0x0F04, esi
-   166 0000030B 00E84A0200006683C4-
-   166 00000314 10                 
-   167                                  
-   168                                  .14L:
-   169 00000315 A0[68030000]            	mov	al, [.int_key]
-   170 0000031A 50E85E0A00006683C4-     	cdecl	ctrl_alt_end, eax
-   170 00000323 04                 
-   171 00000324 83F800                  	cmp	eax, 0
-   172 00000327 7492                    	je	.10L
-   173                                  
-   174 00000329 B800000000              	mov	eax, 0
-   175 0000032E 0FAB05[6C030000]        	bts	[.once], eax
-   176 00000335 7284                    	jc	.10L
-   177 00000337 E8B40A0000              	cdecl	power_off
-   178                                  
-   179 0000033C E97AFFFFFF              	jmp	.10L
-   180                                  	
+   149                                  
+   150                                  .10L:
+   151                                  
+   152 000002BB E8E10F0000              	cdecl	draw_rotation_bar
+   153                                  
+   154 000002C0 68[68030000]68-         	cdecl	ring_rd, _KEY_BUFF, .int_key
+   154 000002C6 [440B0000]E88D0800-
+   154 000002CE 006683C408         
+   155 000002D3 83F800                  	cmp	eax, 0
+   156 000002D6 74E3                    	je	.10L
+   157                                  
+   158 000002D8 68[440B0000]6A1D6A-     	cdecl	draw_key, 2, 29, _KEY_BUFF
+   158 000002E0 02E8D20800006683C4-
+   158 000002E9 0C                 
+   159                                  
+   160 000002EA A0[68030000]            	mov	al, [.int_key]
+   161 000002EF 3C02                    	cmp	al, 0x02
+   162 000002F1 7522                    	jne	.14L
+   163                                  
+   164 000002F3 FF15F09B0000            	call	[BOOT_LOAD + BOOT_SIZE - 16]
+   165 000002F9 BE00780000              	mov	esi, 0x7800
+   166 000002FE C6462000                	mov	[esi + 32], byte 0
+   167 00000302 5668040F00006A006A-     	cdecl	draw_str, 0, 0, 0x0F04, esi
+   167 0000030B 00E84A0200006683C4-
+   167 00000314 10                 
+   168                                  
+   169                                  .14L:
+   170 00000315 A0[68030000]            	mov	al, [.int_key]
+   171 0000031A 50E85E0A00006683C4-     	cdecl	ctrl_alt_end, eax
+   171 00000323 04                 
+   172 00000324 83F800                  	cmp	eax, 0
+   173 00000327 7492                    	je	.10L
+   174                                  
+   175 00000329 B800000000              	mov	eax, 0
+   176 0000032E 0FAB05[6C030000]        	bts	[.once], eax
+   177 00000335 7284                    	jc	.10L
+   178 00000337 E8B40A0000              	cdecl	power_off
+   179                                  
+   180 0000033C E97AFFFFFF              	jmp	.10L
    181                                  	
-   182 00000341 2048656C6C6F2C206B-     .s0:	db	" Hello, kernel! ", 0
-   182 0000034A 65726E656C212000   
-   183 00000352 2D2D2D2D00              .t0:	db	"----",0
-   184 00000357 2D2D2D2D2D2D2D2D2D-     .t1:	db	"----------------",0
-   184 00000360 2D2D2D2D2D2D2D00   
-   185 00000368 00000000                .int_key:	dd	0
-   186 0000036C 00000000                .once:		dd	0
-   187                                  
-   188                                  ALIGN	4,	db	0
-   189 00000370 00000000                FONT_ADR:	dd	0
-   190 00000374 00000000                RTC_TIME:	dd	0
-   191                                  
-   192 00000378 00000000                RUST_ENTRY:	dd	0
-   193                                  
-   194                                  ope_exce:
-   195 0000037C 6A026A006834120000-     	cdecl	draw_num, 0x1234, 0, 2
-   195 00000385 E8B10C00006683C40C 
-   196 0000038E EBFE                    	jmp	$
-   197                                  
+   182                                  	
+   183 00000341 2048656C6C6F2C206B-     .s0:	db	" Hello, kernel! ", 0
+   183 0000034A 65726E656C212000   
+   184 00000352 2D2D2D2D00              .t0:	db	"----",0
+   185 00000357 2D2D2D2D2D2D2D2D2D-     .t1:	db	"----------------",0
+   185 00000360 2D2D2D2D2D2D2D00   
+   186 00000368 00000000                .int_key:	dd	0
+   187 0000036C 00000000                .once:		dd	0
+   188                                  
+   189                                  ALIGN	4,	db	0
+   190 00000370 00000000                FONT_ADR:	dd	0
+   191 00000374 00000000                RTC_TIME:	dd	0
+   192                                  
+   193 00000378 00000000                RUST_ENTRY:	dd	0
+   194                                  
+   195                                  ope_exce:
+   196 0000037C 6A026A006834120000-     	cdecl	draw_num, 0x1234, 0, 2
+   196 00000385 E8B10C00006683C40C 
+   197 0000038E EBFE                    	jmp	$
    198                                  
-   199                                  %include	"../modules/protect/vga.s"
+   199                                  
+   200                                  %include	"../modules/protect/vga.s"
      1                              <1> vga_set_read_plane:	; cga_set_read_plane(plane)
      2                              <1> ; this function only selects read plane
      3 00000390 55                  <1> 	push	ebp
@@ -695,7 +696,7 @@
    143                              <1> 
    144 00000442 C3                  <1> 	ret
    145                              <1> 
-   200                                  %include	"../modules/protect/memcpy.s"
+   201                                  %include	"../modules/protect/memcpy.s"
      1                              <1> memcpy:
      2 00000443 55                  <1> 	push	ebp
      3 00000444 89E5                <1> 	mov	ebp,esp
@@ -720,7 +721,7 @@
     22                              <1> 
     23 0000045B C3                  <1> 	ret
     24                              <1> 
-   201                                  %include	"../modules/protect/draw_char.s"
+   202                                  %include	"../modules/protect/draw_char.s"
      1                              <1> draw_char:
      2                              <1> ; draw_char(row,col,color,ch)
      3 0000045C 55                  <1> 	push	ebp
@@ -785,7 +786,7 @@
     50 0000051F C3                  <1> 	ret
     51                              <1> 
     52                              <1> 	
-   202                                  %include	"../modules/protect/draw_font.s"
+   203                                  %include	"../modules/protect/draw_font.s"
      1                              <1> draw_font:
      2 00000520 55                  <1> 	push	ebp
      3 00000521 89E5                <1> 	mov	ebp, esp
@@ -826,7 +827,7 @@
     37                              <1> 
     38                              <1> 
     39                              <1> 
-   203                                  %include	"../modules/protect/draw_str.s"
+   204                                  %include	"../modules/protect/draw_str.s"
      1                              <1> draw_str:	; draw_str(row,col,color,str)
      2 0000055B 55                  <1> 	push	ebp
      3 0000055C 89E5                <1> 	mov	ebp, esp
@@ -875,7 +876,7 @@
     46 00000597 5D                  <1> 	pop	ebp
     47                              <1> 
     48 00000598 C3                  <1> 	ret
-   204                                  %include	"../modules/protect/draw_color_bar.s"
+   205                                  %include	"../modules/protect/draw_color_bar.s"
      1                              <1> draw_color_bar:	; draw_color_bar(row,col)
      2 00000599 55                  <1> 	push	ebp
      3 0000059A 89E5                <1> 	mov	ebp, esp
@@ -940,7 +941,7 @@
     61 00000607 0005000D            <1> 	dw 0x0500,0x0D00
     62 0000060B 0006000E            <1> 	dw 0x0600,0x0E00
     63 0000060F 0007000F            <1> 	dw 0x0700,0x0F00
-   205                                  %include	"../modules/protect/draw_pixel.s"
+   206                                  %include	"../modules/protect/draw_pixel.s"
      1                              <1> draw_pixel:	; draw_pixel(X,Y,color)
      2                              <1> ; X,Y is PIXEL data
      3 00000613 55                  <1> 	push	ebp
@@ -1006,7 +1007,7 @@
     51                              <1> 
     52 000006D3 C3                  <1> 	ret
     53                              <1> 
-   206                                  %include	"../modules/protect/draw_line.s"
+   207                                  %include	"../modules/protect/draw_line.s"
      1                              <1> draw_line:	; draw_line(X0,Y0,X1,Y0,color)
      2 000006D4 55                  <1> 	push	ebp
      3 000006D5 89E5                <1> 	mov	ebp, esp
@@ -1135,7 +1136,7 @@
    126 00000784 C3                  <1> 	ret
    127                              <1> 
    128                              <1> 
-   207                                  %include	"../modules/protect/draw_rect.s"
+   208                                  %include	"../modules/protect/draw_rect.s"
      1                              <1> draw_rect:	; draw_rect(x0,y0,x1,y1,color)
      2 00000785 55                  <1> 	push	ebp
      3 00000786 89E5                <1> 	mov	ebp, esp
@@ -1195,7 +1196,7 @@
     53                              <1> 
     54 000007EA C3                  <1> 	ret
     55                              <1> 
-   208                                  %include	"../modules/protect/itoa.s"
+   209                                  %include	"../modules/protect/itoa.s"
      1                              <1> itoa:	;itoa(num,buf,size,radix,flag);
      2 000007EB 55                  <1> 	push 	ebp
      3 000007EC 89E5                <1> 	mov	ebp, esp
@@ -1291,7 +1292,7 @@
     92                              <1> 	
     93                              <1> 	
     94                              <1> 	
-   209                                  %include	"../modules/protect/draw_time.s"
+   210                                  %include	"../modules/protect/draw_time.s"
      1                              <1> draw_time:	; draw_time(col, row, color, time)
      2 00000876 55                  <1> 	push	ebp
      3 00000877 89E5                <1> 	mov	ebp, esp
@@ -1332,7 +1333,7 @@
     30 000008E2 5A5A3A              <1> .hour:	db	"ZZ:"
     31 000008E5 5A5A3A              <1> .min:	db	"ZZ:"
     32 000008E8 5A5A00              <1> .sec:	db	"ZZ", 0
-   210                                  %include	"../modules/protect/rtc.s"
+   211                                  %include	"../modules/protect/rtc.s"
      1                              <1> rtc_get_time:
      2 000008EB 55                  <1> 	push	ebp
      3 000008EC 89E5                <1> 	mov	ebp, esp
@@ -1384,7 +1385,7 @@
     49 0000092B C3                  <1> 	ret
     50                              <1> 
     51                              <1> 
-   211                                  %include	"../modules/protect/int_rtc.s"
+   212                                  %include	"../modules/protect/int_rtc.s"
      1                              <1> int_rtc:
      2 0000092C 60                  <1> 	pusha		; all registers in stack
      3 0000092D 1E                  <1> 	push	ds
@@ -1435,7 +1436,7 @@
     43                              <1> 
     44 00000968 C3                  <1> 	ret
     45                              <1> 
-   212                                  %include	"../modules/protect/pic.s"
+   213                                  %include	"../modules/protect/pic.s"
      1                              <1> init_pic:	; () -> ()
      2                              <1> ; see p298
      3                              <1> ; ICW -- Initializion command words
@@ -1476,7 +1477,7 @@
     18 00000992 58                  <1> 	pop	eax
     19                              <1> 
     20 00000993 C3                  <1> 	ret
-   213                                  %include	"../modules/protect/interrupt.s"
+   214                                  %include	"../modules/protect/interrupt.s"
      1                              <1> int_stop:
      2 00000994 FB                  <1> 	sti
      3                              <1> 
@@ -1594,7 +1595,7 @@
     92                              <1> 
     93 00000B0F 203C20205A45524F5F- <1> .s0:	db	" <  ZERO_DIV  > ", 0
     93 00000B18 44495620203E2000    <1>
-   214                                  %include	"../modules/protect/int_keyboard.s"
+   215                                  %include	"../modules/protect/int_keyboard.s"
      1                              <1> int_keyboard:
      2 00000B20 60                  <1> 	pusha
      3 00000B21 1E                  <1> 	push	ds
@@ -1628,8 +1629,8 @@
     28                              <1> ; ring_buff_size is struct "ring_buff"'s size created by nasm
     29                              <1> 
     30                              <1> 	
-   215                                  ;%include	"../../../../testOS/src/modules/protect/int_keyboard.s"
-   216                                  %include	"../modules/protect/ring_buff.s"
+   216                                  ;%include	"../../../../testOS/src/modules/protect/int_keyboard.s"
+   217                                  %include	"../modules/protect/ring_buff.s"
      1                              <1> ring_rd:	; ring_rd(ring_address, dest_address)
      2                              <1> 		; return eax
      3 00000B5C 55                  <1> 	push	ebp
@@ -1744,7 +1745,7 @@
    108 00000C07 C3                  <1> 	ret
    109                              <1> 
    110 00000C08 2D2D00              <1> .tmp:	db	"--",0
-   217                                  %include	"../modules/protect/call_gate.s"
+   218                                  %include	"../modules/protect/call_gate.s"
      1                              <1> call_gate:
      2                              <1> 	;retf	4 * 4
      3                              <1> ; if SS_GATE_0 called
@@ -1802,7 +1803,7 @@
     54 00000C42 7461736B5F3100      <1> .t1:	db	"task_1",0
     55 00000C49 2D2D2D2D2D2D2D2D00  <1> .t2:	db	"--------", 0
     56 00000C52 2D2D2D2D2D2D2D2D00  <1> .t3:	db	"--------", 0
-   218                                  %include	"../modules/protect/trap_gate.s"
+   219                                  %include	"../modules/protect/trap_gate.s"
      1                              <1> ; system calls
      2                              <1> trap_gate_81:	; system call 81, draw_char
      3                              <1> %ifdef	USE_TEST_AND_SET
@@ -1833,7 +1834,7 @@
     22 00000CA6 00<rept>            <1> ALIGN	4,		db	0
     23 00000CA8 00000000            <1> IN_USE_81:		dd	0
     24 00000CAC 00000000            <1> IN_USE_82:		dd	0
-   219                                  %include	"../modules/protect/test_and_set.s"
+   220                                  %include	"../modules/protect/test_and_set.s"
      1                              <1> test_and_set:
      2 00000CB0 55                  <1> 	push	ebp
      3 00000CB1 89E5                <1> 	mov	ebp, esp
@@ -1862,7 +1863,7 @@
     26                              <1> 
     27 00000CCF C3                  <1> 	ret
     28                              <1> 
-   220                                  %include	"../modules/protect/int_nm.s"
+   221                                  %include	"../modules/protect/int_nm.s"
      1                              <1> get_tss_base:
      2                              <1> 	; eax : return value
      3                              <1> 	; ebx : segment selector
@@ -1946,7 +1947,7 @@
     80                              <1> 
     81 00000D59 00<rept>            <1> ALIGN	4,	db	0
     82 00000D5C 00000000            <1> .last_tss:	dd	0
-   221                                  %include	"../modules/protect/wait_tick.s"
+   222                                  %include	"../modules/protect/wait_tick.s"
      1                              <1> wait_tick:
      2 00000D60 55                  <1> 	push	ebp
      3 00000D61 89E5                <1> 	mov	ebp, esp
@@ -1970,7 +1971,7 @@
     21                              <1> 
     22 00000D7D C3                  <1> 	ret
     23                              <1> 
-   222                                  %include	"../modules/protect/ctrl_alt_end.s"
+   223                                  %include	"../modules/protect/ctrl_alt_end.s"
      1                              <1> ctrl_alt_end:
      2 00000D7E 55                  <1> 	push	ebp
      3 00000D7F 89E5                <1> 	mov	ebp, esp
@@ -2007,7 +2008,7 @@
     34                              <1> 
     35                              <1> 
     36 00000DD0 00<rept>            <1> .key_state:	times	32	db	0
-   223                                  %include	"../modules/protect/power_off.s"
+   224                                  %include	"../modules/protect/power_off.s"
      1                              <1> power_off:
      2 00000DF0 55                  <1> 	push	ebp
      3 00000DF1 89E5                <1> 	mov	ebp, esp
@@ -2143,7 +2144,7 @@
    114                              <1> 
    115                              <1> 
    116                              <1> 
-   224                                  %include	"../modules/protect/acpi_find.s"
+   225                                  %include	"../modules/protect/acpi_find.s"
      1                              <1> acpi_find:
      2 00000FA4 55                  <1> 	push	ebp
      3 00000FA5 89E5                <1> 	mov	ebp, esp
@@ -2181,7 +2182,7 @@
     35                              <1> 
     36 00000FD1 C3                  <1> 	ret
     37                              <1> 
-   225                                  %include	"../modules/protect/find_rsdt_entry.s"
+   226                                  %include	"../modules/protect/find_rsdt_entry.s"
      1                              <1> find_rsdt_entry:
      2 00000FD2 55                  <1> 	push	ebp
      3 00000FD3 89E5                <1> 	mov	ebp, esp
@@ -2222,7 +2223,7 @@
     38 00000FFF 5D                  <1> 	pop	ebp
     39                              <1> 
     40 00001000 C3                  <1> 	ret
-   226                                  %include	"../modules/protect/acpi_package_value.s"
+   227                                  %include	"../modules/protect/acpi_package_value.s"
      1                              <1> acpi_package_value:
      2 00001001 55                  <1> 	push	ebp
      3 00001002 89E5                <1> 	mov	ebp, esp
@@ -2272,7 +2273,7 @@
     47 0000103A C3                  <1> 	ret
     48                              <1> 	
     49                              <1> 
-   227                                  %include	"../modules/protect/draw_num.s"
+   228                                  %include	"../modules/protect/draw_num.s"
      1                              <1> draw_num:	; draw_num(num, x, y)
      2 0000103B 55                  <1> 	push	ebp
      3 0000103C 89E5                <1> 	mov	ebp, esp
@@ -2310,7 +2311,7 @@
     26 000010BB C3                  <1> 	ret
     27                              <1> 
     28 000010BC 2D00                <1> .t0:	db	"-", 0
-   228                                  %include	"../modules/protect/panic_handler.s"
+   229                                  %include	"../modules/protect/panic_handler.s"
      1                              <1> panic_handler : 
      2 000010BE CDFF                <1> 	int	0xFF
      3 000010C0 C3                  <1> 	ret
@@ -2344,8 +2345,8 @@
     26 00001103 63212100            <1>
     27                              <1> 
     28                              <1> 
-   229                                  ;%include	"../modules/protect/int_pf.s"
-   230                                  %include	"modules/paging.s"
+   230                                  ;%include	"../modules/protect/int_pf.s"
+   231                                  %include	"modules/paging.s"
      1                              <1> page_set_4m:
      2 00001107 55                  <1> 	push	ebp
      3 00001108 89E5                <1> 	mov	ebp, esp
@@ -2415,7 +2416,7 @@
     52                              <1> 
     53 000011F4 C3                  <1> 	ret
     54                              <1> 
-   231                                  %include	"modules/int_pf.s"
+   232                                  %include	"modules/int_pf.s"
      1                              <1> int_pf:
      2 000011F5 55                  <1> 	push	ebp
      3 000011F6 89E5                <1> 	mov	ebp, esp
@@ -2467,8 +2468,8 @@
     46 0000124A 203C20504147452046- <1> .s0	db	" < PAGE FAULT > ", 0
     46 00001253 41554C54203E2000    <1>
     47                              <1> 
-   232                                  ;%include	"../modules/protect/int_timer.s"
-   233                                  %include	"modules/my_int_timer.s"
+   233                                  ;%include	"../modules/protect/int_timer.s"
+   234                                  %include	"modules/my_int_timer.s"
      1                              <1> int_timer:
      2 0000125B 60                  <1> 	pushad
      3 0000125C 06                  <1> 	push	es
@@ -2529,7 +2530,7 @@
     50 000012A0 C3                  <1> 	ret
     51                              <1> 
     52                              <1> 
-   234                                  %include	"../modules/protect/draw_rotation_bar.s"
+   235                                  %include	"../modules/protect/draw_rotation_bar.s"
      1                              <1> draw_rotation_bar:
      2 000012A1 55                  <1> 	push	ebp
      3 000012A2 89E5                <1> 	mov	ebp, esp
@@ -2558,7 +2559,7 @@
     25                              <1> ALIGN	4,	db	0
     26 000012D8 00000000            <1> .index:		dd	0
     27 000012DC 7C2F2D5C            <1> .table:		dd	"|/-\"
-   235                                  %include	"descriptor.s"
+   236                                  %include	"descriptor.s"
      1                              <1> ; setting of task0 
      2 000012E0 0000000000000000    <1> LDT:		dq	0x0000_0000_0000_0000
      3 000012E8 FFFF0000009ACF00    <1> .cs_task_0:	dq	0x00CF_9A00_0000_FFFF
@@ -2825,7 +2826,7 @@
    264 0000192A 00000000            <1> .io:      dd 0
    265 0000192E 00<rept>            <1> .fp_save:	times 108 + 4 db 0
    266                              <1> 
-   236                                  %include	"task/task_1.s"
+   237                                  %include	"task/task_1.s"
      1                              <1> task_1:
      2 0000199E 68[CC190000]6A076A- <1> 	cdecl	draw_str, 63, 0, 0x07, .s0
      2 000019A6 006A3FE8ADEBFFFF66- <1>
@@ -2854,7 +2855,7 @@
     22                              <1> 
     23                              <1> 
     24 000019CC 5461736B2D3100      <1> .s0	db	"Task-1", 0
-   237                                  %include	"task/task_2.s"
+   238                                  %include	"task/task_2.s"
      1                              <1> task_2:
      2 000019D3 68[961A0000]6A076A- <1> 	cdecl	draw_str, 63, 1, 0x07, .s0
      2 000019DB 016A3FE878EBFFFF66- <1>
@@ -2918,7 +2919,7 @@
     56 00001A9D 2D                  <1> .s1:	db	"-"
     57 00001A9E 302E                <1> .s2:	db	"0."
     58 00001AA0 30303000            <1> .s3:	db	"000", 0
-   238                                  %include	"task/task_3.s"
+   239                                  %include	"task/task_3.s"
      1                              <1> task_3:
      2                              <1> 	; push	ebp
      3 00001AA4 89E5                <1> 	mov	ebp, esp
@@ -3167,40 +3168,40 @@
    239                              <1> 	
    240                              <1> 
    241                              <1> 
-   239                                  ;%include	"../../../../testOS/src/39_rose/tasks/task_3.s"
-   240                                  
-   241                                  ;%include	"../../../../testOS/src/modules/protect/ring_buff.s"
-   242                                  ;%include	"../../../../testOS/src/modules/protect/some.s"
-   243                                  test_func:
-   244 00001CEC 68[041D0000]680F01-     	cdecl	draw_str, 0, 20, 0x010F, .t0
-   244 00001CF4 00006A146A00E85CE8-
-   244 00001CFD FFFF6683C410       
-   245 00001D03 C3                      	ret
-   246 00001D04 54657374206D657373-     .t0:	db	"Test message", 0
-   246 00001D0D 61676500           
-   247                                  
-   248 00001D11 00000000                RUSTTIMERADDRESS:		dd	0
-   249                                  
-   250 00001D15 00<rept>                panic_message:	times	0xff	db	0
-   251                                  
-   252 00001E14 01<rept>                	times	KERNEL_SIZE - ($ - $$) - 0x100	db	1
-   253                                  
-   254 00001F00 [3B100000]              funcs:	dd	draw_num
-   255 00001F04 [EC1C0000]              	dd	test_func
-   256 00001F08 [5B050000]              	dd	draw_str
-   257 00001F0C [600D0000]              	dd	wait_tick
-   258 00001F10 [13060000]              	dd	draw_pixel
-   259 00001F14 10000000                	dd	RING_ITEM_SIZE
-   260 00001F18 [440B0000]              	dd	_KEY_BUFF
-   261 00001F1C [BE100000]              	dd	panic_handler
-   262 00001F20 [5C0B0000]              	dd	ring_rd
-   263 00001F24 [5C040000]              	dd	draw_char
-   264 00001F28 [F00D0000]              	dd	power_off
-   265 00001F2C [151D0000]              	dd	panic_message
-   266 00001F30 00002200                	dd	HEAP_START
-   267 00001F34 [111D0000]              	dd	RUSTTIMERADDRESS
-   268                                  
-   269 00001F38 01<rept>                	times	KERNEL_SIZE - ($ - $$)	db	1
-   270                                  
-   271                                  ; KERNEL_END:
-   272                                  
+   240                                  ;%include	"../../../../testOS/src/39_rose/tasks/task_3.s"
+   241                                  
+   242                                  ;%include	"../../../../testOS/src/modules/protect/ring_buff.s"
+   243                                  ;%include	"../../../../testOS/src/modules/protect/some.s"
+   244                                  test_func:
+   245 00001CEC 68[041D0000]680F01-     	cdecl	draw_str, 0, 20, 0x010F, .t0
+   245 00001CF4 00006A146A00E85CE8-
+   245 00001CFD FFFF6683C410       
+   246 00001D03 C3                      	ret
+   247 00001D04 54657374206D657373-     .t0:	db	"Test message", 0
+   247 00001D0D 61676500           
+   248                                  
+   249 00001D11 00000000                RUSTTIMERADDRESS:		dd	0
+   250                                  
+   251 00001D15 00<rept>                panic_message:	times	0xff	db	0
+   252                                  
+   253 00001E14 01<rept>                	times	KERNEL_SIZE - ($ - $$) - 0x100	db	1
+   254                                  
+   255 00001F00 [3B100000]              funcs:	dd	draw_num
+   256 00001F04 [EC1C0000]              	dd	test_func
+   257 00001F08 [5B050000]              	dd	draw_str
+   258 00001F0C [600D0000]              	dd	wait_tick
+   259 00001F10 [13060000]              	dd	draw_pixel
+   260 00001F14 10000000                	dd	RING_ITEM_SIZE
+   261 00001F18 [440B0000]              	dd	_KEY_BUFF
+   262 00001F1C [BE100000]              	dd	panic_handler
+   263 00001F20 [5C0B0000]              	dd	ring_rd
+   264 00001F24 [5C040000]              	dd	draw_char
+   265 00001F28 [F00D0000]              	dd	power_off
+   266 00001F2C [151D0000]              	dd	panic_message
+   267 00001F30 00002200                	dd	HEAP_START
+   268 00001F34 [111D0000]              	dd	RUSTTIMERADDRESS
+   269                                  
+   270 00001F38 01<rept>                	times	KERNEL_SIZE - ($ - $$)	db	1
+   271                                  
+   272                                  ; KERNEL_END:
+   273                                  

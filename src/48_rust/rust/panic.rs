@@ -1,9 +1,6 @@
 use core::fmt::{Write,write};
 use core::panic::PanicInfo;
 
-macro_rules! print {
-    ($($arg:tt)*) => ( unsafe { write!(super::MyTerminal1,"{}",format_args!($($arg)*)); } );
-}
 
 union StringToPointer<'a> {
     string : &'a str,

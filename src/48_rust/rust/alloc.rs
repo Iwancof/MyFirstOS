@@ -2,10 +2,6 @@ use core::mem::size_of;
 use core::fmt::{self, Write};
 use core::ops::{Deref, DerefMut};
 
-macro_rules! print {
-    ($($arg:tt)*) => ( unsafe { write!(super::MyTerminal1,"{}",format_args!($($arg)*)); } );
-}
-
 static SizePerOneBreak : u32 = 256;
 static HeaderSize : u32 = size_of::<u64>() as u32;
 static mut IsValid : [u8;1024] = [0;1024];
@@ -351,9 +347,6 @@ pub fn null_pointer<T>() -> Pointer<T> {
     }
 }
 
-fn new_line() {
-    unsafe { super::MyTerminal1.new_line(); }
-}
 
 fn valid_field_set(i : usize, x : bool) {
     unsafe {

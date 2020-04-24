@@ -21,10 +21,26 @@ macro_rules! create_union {
    };
 }
 
-
 macro_rules! deref_func {
     ( $adr:expr ) => {
         FnPointerUnion { value : *(($adr) as *mut u32) }.func;
     }
 }
 
+macro_rules! vec {
+    (<$arg:ty>) => (super::vec::Vec::<$arg>::new())
+}
+macro_rules! print {
+    ($($arg:tt)*) => (
+        unsafe {
+            if let Some(x) = &mut super::MyTerminal1 {
+                write!(x,"{}",format_args!($($arg)*));
+            }
+        }
+    );
+}
+/*
+macro_rules! print {
+    ($($arg:tt)*) => ( );
+}
+*/
