@@ -27,6 +27,7 @@ mod time;
 //mod old_terminal;
 mod keys;
 mod terminal;
+mod interface;
 
 use core::mem::size_of;
 use core::fmt::{self,Write,write,Error};
@@ -34,8 +35,10 @@ use core::fmt::{self,Write,write,Error};
 //use core::iter::IntoIterator::into_iter;
 use time::{subscribe_with_task, subscribe};
 use terminal::{Terminal};
+use interface::{PortBuffer, polling_comport};
 
 const BASE : u32                = 0x102F00;
+const FATRESULT : u32           = 0x7800;
 const DRAWNUM : u32             = 0  * 4;
 const TESTFUNC : u32            = 1  * 4;
 const DRAWSTR : u32             = 2  * 4;
@@ -50,7 +53,9 @@ const POWEROFF : u32            = 10 * 4;
 const PANICMESSAGE : u32        = 11 * 4;
 const HEAPSTART : u32           = 12 * 4;
 const RUSTTIMERADDRESS : u32    = 13 * 4;
-
+const READFAT : u32             = 14 * 4;
+const OUTB : u32                = 15 * 4;
+const INB : u32                 = 16 * 4;
 
 //static mut _KEY_BUFF : 
 static mut ItemSize : u32 = 0;
@@ -65,9 +70,14 @@ static mut RustTimerAddress : *mut fn() -> () = 0 as *mut fn() -> ();
 
 
 macro_rules! print {
-    ($($arg:tt)*) => (unsafe {write!(MyTerminal1,"{}",format_args!($($arg)*)) });
+    ($($arg:tt)*) => (
+        unsafe {
+            if let Some(x) = &mut MyTerminal1 {
+                write!(x,"{}",format_args!($($arg)*));
+            }
+        }
+    );
 }
-
 
 #[no_mangle]
 #[start]
@@ -86,12 +96,14 @@ pub unsafe fn init_os() -> fn() -> () {
 
     Initialized = true;
    
-    //subscribe(test_timer, 1000);
+    subscribe(polling_comport, 1);
 
     //string::string_test
     //vec::vec_test
     rust_entry
     //rust_test_code
+    
+    //interface::stdio_test
 
     }
 
@@ -104,6 +116,13 @@ pub fn rust_entry() -> () {
             if let Some(x) = &mut MyTerminal1 {
                 x.input_key(inp_key);
             }
+        }
+    }
+    unsafe {
+        let r = PortBuffer.read();
+        match r {
+            Ok(x) => { print!("{}", x as char); },
+            Err(_) => {},
         }
     }
 }
@@ -210,11 +229,20 @@ unsafe fn init_func() {
         create_union!( ; !);
         deref_func!(BASE + POWEROFF)
     };
+    outb_unsafe = {
+        create_union!(u16, u8, ; );
+        deref_func!(BASE + OUTB)
+    };
+    inb_unsafe = {
+        create_union!(u16, ; u8);
+        deref_func!(BASE + INB)
+    };
     KeyBuff = *((BASE + KEYBUFF) as *mut u32) as *mut u8;
     ItemSize = *((BASE + RINGITEMSIZE) as *mut u32);
     PanicMessagePointer = *((BASE + PANICMESSAGE) as *mut u32) as *mut u8;
     HeapStart = *((BASE + HEAPSTART) as *mut u32) as *mut u8;
     RustTimerAddress = *((BASE + RUSTTIMERADDRESS) as *mut u32) as *mut fn() -> ();
+
 }
 
 #[lang = "eh_personality"]
@@ -256,5 +284,18 @@ extern fn draw_char(x : usize, y : usize, col : u16, ch : u8) { unsafe{draw_char
 static mut power_off_unsafe : extern fn() -> ! = power_off_uninitialized;
 extern fn power_off_uninitialized() -> ! { loop {} }
 extern fn power_off() -> ! { unsafe{ power_off_unsafe() } }
+
+//static mut read_fat : extern fn() -> () = read_fat_uninitialized;
+//extern fn read_fat_uninitialized() -> () 
+//extern fn 
+
+static mut outb_unsafe : extern fn(u16, u8) -> () = outb_uninitialized;
+extern fn outb_uninitialized(port : u16, data : u8) -> () { }
+extern fn outb(port : u16, data : u8) -> () { unsafe { outb_unsafe(port, data); } }
+
+static mut inb_unsafe : extern fn (u16) -> u8 = inb_uninitialized;
+extern fn inb_uninitialized(port : u16) -> u8 { 0xFF }
+extern fn inb(port : u16) -> u8 { unsafe { inb_unsafe(port) } }
+
 
 

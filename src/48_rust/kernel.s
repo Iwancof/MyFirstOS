@@ -89,7 +89,10 @@ kernel:
 	cdecl	draw_color_bar, 63, 4
 
         cdecl	draw_str, 25, 14, 0x010F, .s0
-	
+
+	cdecl	init_serial
+	; cdecl	test_serial
+
 	;jmp	SS_TASK_1:10000
 	pusha
 
@@ -134,18 +137,8 @@ kernel:
 
 .90L:
 	cdecl	[RUST_ENTRY]
-	;push	eax
-	;pop	eax
-	;cdecl	draw_num, eax, 0, 1
-
-	; jmp	.90L
-
-	; cdecl	draw_num, _KEY_BUFF, 0, 0
 
 	jmp	.90L
-
-	; jmp	$
-
 
 .10L:
 
@@ -227,6 +220,8 @@ ope_exce:
 %include	"../modules/protect/acpi_package_value.s"
 %include	"../modules/protect/draw_num.s"
 %include	"../modules/protect/panic_handler.s"
+%include	"../modules/protect/serial.s"
+%include	"../modules/protect/interface.s"
 ;%include	"../modules/protect/int_pf.s"
 %include	"modules/paging.s"
 %include	"modules/int_pf.s"
@@ -248,7 +243,7 @@ test_func:
 
 RUSTTIMERADDRESS:		dd	0
 
-panic_message:	times	0xff	db	0
+panic_message:	times	0x10	db	0
 
 	times	KERNEL_SIZE - ($ - $$) - 0x100	db	1
 
@@ -266,8 +261,11 @@ funcs:	dd	draw_num
 	dd	panic_message
 	dd	HEAP_START
 	dd	RUSTTIMERADDRESS
+	dd	BOOT_LOAD + BOOT_SIZE - 16	; read fat
+	dd	outb
+	dd	inb
+
 
 	times	KERNEL_SIZE - ($ - $$)	db	1
 
-; KERNEL_END:
 
